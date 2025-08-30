@@ -118,5 +118,119 @@ Future deleteRole(int id) async {
   }
 }
 
+//----------- USUARIOS -------------
+/// Obtener todos los usuarios
+Future fetchUsers() async {
+  final response = await http.get(Uri.parse('$baseUrl/users/'));
+
+  if (response.statusCode == 200) {
+    myReactController.setListUsers(
+      jsonDecode(response.body),
+    );
+  } else {
+    throw Exception('Error al traer los usuarios');
+  }
+}
+
+/// Crear un usuario
+Future createUser(Map<String, dynamic> user) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/users/'),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode(user),
+  );
+
+  if (response.statusCode == 201) {
+    await fetchUsers();
+  } else {
+    throw Exception('Error al crear el usuario');
+  }
+}
+
+/// Actualizar un usuario
+Future updateUser(int id, Map<String, dynamic> user) async {
+  final response = await http.put(
+    Uri.parse('$baseUrl/users/$id'),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode(user),
+  );
+
+  if (response.statusCode == 200) {
+    await fetchUsers();
+  } else {
+    throw Exception('Error al actualizar el usuario');
+  }
+}
+
+/// Eliminar un usuario
+Future deleteUser(int id) async {
+  final response = await http.delete(
+    Uri.parse('$baseUrl/users/$id'),
+  );
+
+  if (response.statusCode == 200) {
+    await fetchUsers();
+  } else {
+    throw Exception('Error al eliminar el usuario');
+  }
+}
+
+//----------- EVENTOS -------------
+/// Obtener todos los eventos
+Future fetchEvents() async {
+  final response = await http.get(Uri.parse('$baseUrl/events/'));
+
+  if (response.statusCode == 200) {
+    myReactController.setListEvents(
+      jsonDecode(response.body),
+    );
+  } else {
+    throw Exception('Error al traer los eventos');
+  }
+}
+
+/// Crear un evento
+Future createEvent(Map<String, dynamic> event) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/events/'),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode(event),
+  );
+
+  if (response.statusCode == 201) {
+    await fetchEvents();
+  } else {
+    throw Exception('Error al crear el evento');
+  }
+}
+
+/// Actualizar un evento
+Future updateEvent(int id, Map<String, dynamic> event) async {
+  final response = await http.put(
+    Uri.parse('$baseUrl/events/$id'),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode(event),
+  );
+
+  if (response.statusCode == 200) {
+    await fetchEvents();
+  } else {
+    throw Exception('Error al actualizar el evento');
+  }
+}
+
+/// Eliminar un evento
+Future deleteEvent(int id) async {
+  final response = await http.delete(
+    Uri.parse('$baseUrl/events/$id'),
+  );
+
+  if (response.statusCode == 200) {
+    await fetchEvents();
+  } else {
+    throw Exception('Error al eliminar el evento');
+  }
+}
+
 
 

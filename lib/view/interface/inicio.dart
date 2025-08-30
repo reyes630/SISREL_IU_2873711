@@ -5,8 +5,9 @@ import 'package:app_adso_711_1/main.dart';
 // Importamos vistas para las pestañas del TabBar
 import '../categories/viewCategories.dart';
 import '../events/viewEvents.dart';
+import '../login/singIn.dart';
 import '../rols/viewRols.dart';
-import '../users/viewUsers.dart';
+import '../users/ViewUsers.dart';
 import 'HomePrincipal.dart';
 
 class Inicio extends StatefulWidget {
@@ -43,22 +44,36 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final Color barraColor = const Color.fromARGB(255, 248, 18, 1);
+    final Color barraColor = Colors.teal[400]!;
 
     return Obx(
       () => Scaffold(
         appBar: AppBar(
           title: Center(child: Text(myReactController.getTituloAppBar)),
-          backgroundColor: Colors.orange,
+          backgroundColor: Colors.teal[400],
           foregroundColor: Colors.white,
           leading: IconButton(
             icon: const Icon(Icons.home),
+            tooltip: "Inicio",
             onPressed: () {
               setState(() {
                 mostrarHome = true; // vuelve al Home dentro del mismo Scaffold
               });
             },
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: "Cerrar sesión",
+              onPressed: () {
+                // Regresa a la pantalla de login 
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginView()),
+                );
+              },
+            ),
+          ],
         ),
 
         bottomNavigationBar: Material(
@@ -93,10 +108,10 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
             : TabBarView(
                 controller: _tabController,
                 children: const [
-                  viewUsers(),
+                  ViewUsers(),
                   Viewroles(),
-                  viewCategories(),
-                  viewEvents(),
+                  ViewCategories(),
+                  ViewEvents(),
                 ],
               ),
       ),
