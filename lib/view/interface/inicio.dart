@@ -109,7 +109,7 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
                 controller: _tabController,
                 children: const [
                   ViewUsers(),
-                  Viewroles(),
+                  ViewRoles(),
                   ViewCategories(),
                   ViewEvents(),
                 ],

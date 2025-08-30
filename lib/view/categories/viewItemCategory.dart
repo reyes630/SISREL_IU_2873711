@@ -7,7 +7,7 @@ viewItemCategory(context, itemCategory) {
       return Scaffold(
         appBar: AppBar(
           title: const Text("Detalle categoría"),
-          backgroundColor: Colors.amber[300],
+          backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
         ),
         body: ListView(

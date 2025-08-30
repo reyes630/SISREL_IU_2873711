@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../api/apiBienestar.dart';
 import '../../main.dart';
+import 'viewItemEvent.dart';
 
 class ViewEvents extends StatefulWidget {
   const ViewEvents({super.key});
@@ -16,6 +17,17 @@ class _ViewEventsState extends State<ViewEvents> {
   void initState() {
     super.initState();
     fetchEvents(); // método del api que trae los eventos
+  }
+
+  // ===== Eliminar evento =====
+  deleteEventById(int id) async {
+    try {
+      await deleteEvent(id); // <-- asegúrate de que exista en tu api
+      Get.snackbar("Evento eliminado", "ID: $id");
+      fetchEvents();
+    } catch (e) {
+      Get.snackbar("Error", "No se pudo eliminar el evento");
+    }
   }
 
   @override
@@ -35,13 +47,14 @@ class _ViewEventsState extends State<ViewEvents> {
             final event = myReactController.getListEvents[index];
 
             return Card(
+              color: Colors.teal[50],
               elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(10.0),
-                child: SingleChildScrollView( // 🔹 scroll en cada tarjeta
+                child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -49,7 +62,8 @@ class _ViewEventsState extends State<ViewEvents> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.event, size: 20, color: Colors.blueGrey),
+                          Icon(Icons.event,
+                              size: 20, color: Colors.teal[700]),
                           Text(
                             "ID: ${event["id"] ?? "-"}",
                             style: const TextStyle(
@@ -74,14 +88,13 @@ class _ViewEventsState extends State<ViewEvents> {
 
                       const SizedBox(height: 4),
 
-                      // Categoría (ahora va de tercera)
+                      // Categoría (sin color extra)
                       if (event["category"] != null)
                         Text(
                           "Categoría: ${event["category"]["name"]}",
                           style: const TextStyle(
                             fontSize: 13,
                             fontStyle: FontStyle.italic,
-                            color: Colors.deepPurple,
                           ),
                         ),
 
@@ -100,11 +113,11 @@ class _ViewEventsState extends State<ViewEvents> {
                       // Fechas
                       Text(
                         "Inicio: ${event["startDate"] ?? "-"}",
-                        style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                        style: const TextStyle(fontSize: 12),
                       ),
                       Text(
                         "Fin: ${event["endDate"] ?? "-"}",
-                        style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                        style: const TextStyle(fontSize: 12),
                       ),
 
                       const SizedBox(height: 6),
@@ -127,6 +140,42 @@ class _ViewEventsState extends State<ViewEvents> {
                         "Usuario ID: ${event["userId"] ?? "-"}",
                         style: const TextStyle(fontSize: 12),
                       ),
+
+                      const SizedBox(height: 8),
+
+                      // Botones CRUD
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.remove_red_eye,
+                                color: Colors.teal, size: 20),
+                            onPressed: () =>
+                                      viewItemEvent(context, event),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.edit,
+                                color: Colors.teal, size: 20),
+                            onPressed: () {
+                              Get.snackbar("Editar evento",
+                                  "ID: ${event["id"]}"); // Aquí iría tu modal de editar
+                            },
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.delete,
+                                color: Colors.red, size: 20),
+                            onPressed: () => deleteEventById(event["id"]),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -134,6 +183,15 @@ class _ViewEventsState extends State<ViewEvents> {
             );
           },
         ),
+      ),
+
+      // Botón flotante (agregar evento)
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.teal,
+        onPressed: () {
+          Get.snackbar("Agregar", "Aquí irá agregar evento en el futuro");
+        },
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
