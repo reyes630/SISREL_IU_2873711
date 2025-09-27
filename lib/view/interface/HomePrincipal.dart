@@ -11,7 +11,7 @@ class _HomePrincipalState extends State<HomePrincipal> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Center(child: Text('En la app Bienestar SENA encontraras todos los eventos deportivos de SENA Regional Caldas')),
+      child: Center(child: Text('Esta Vista dependera del rol del usuario, Seran los dashborad') ),
     );
   }
 }

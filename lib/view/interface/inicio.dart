@@ -1,14 +1,17 @@
+import 'package:app_adso_711_1/view/dashboards/requestDashboard.dart';
+import 'package:app_adso_711_1/view/profile/profile.dart';
+import 'package:app_adso_711_1/view/requestForm/form_page_1.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:app_adso_711_1/main.dart';
 
 // Importamos vistas para las pestañas del TabBar
-import '../categories/viewCategories.dart';
-import '../events/viewEvents.dart';
+
+import '../../main.dart';
+//import '../Dashboards/dashboardAdmin.dart';
 import '../login/singIn.dart';
-import '../rols/viewRols.dart';
-import '../users/ViewUsers.dart';
-import 'HomePrincipal.dart';
+
+import '../request/viewRequests.dart';
+//import 'HomePrincipal.dart';
 
 class Inicio extends StatefulWidget {
   const Inicio({super.key});
@@ -44,29 +47,26 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final Color barraColor = Colors.teal[400]!;
+    final Color barraColor = const Color.fromARGB(255, 253, 255, 255);
 
     return Obx(
       () => Scaffold(
         appBar: AppBar(
           title: Center(child: Text(myReactController.getTituloAppBar)),
-          backgroundColor: Colors.teal[400],
-          foregroundColor: Colors.white,
-          leading: IconButton(
-            icon: const Icon(Icons.home),
-            tooltip: "Inicio",
-            onPressed: () {
-              setState(() {
-                mostrarHome = true; // vuelve al Home dentro del mismo Scaffold
-              });
-            },
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          foregroundColor: const Color(0xFF39A900),
+           shape: const Border(
+            bottom: BorderSide(
+              color: Color(0xFF39A900), 
+              width: 1,              
+            ),
           ),
           actions: [
             IconButton(
               icon: const Icon(Icons.logout),
               tooltip: "Cerrar sesión",
               onPressed: () {
-                // Regresa a la pantalla de login 
+                // Acción al cerrar sesión
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginView()),
@@ -76,44 +76,39 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
           ],
         ),
 
-        bottomNavigationBar: Material(
+       bottomNavigationBar: Material(
           color: barraColor,
           child: TabBar(
             controller: _tabController,
-            // Cuando estamos en Home, no se mostrara selección:
-            labelColor: mostrarHome ? Colors.white70 : Colors.white,
-            unselectedLabelColor: Colors.white70, //se quita la seleccion del color
+            labelColor: const Color(0xFF39A900),
+            unselectedLabelColor: const Color.fromARGB(179, 68, 68, 68),
             labelStyle: const TextStyle(fontWeight: FontWeight.w500),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-            indicatorColor: mostrarHome ? Colors.transparent : Colors.white,
+            indicatorColor: const Color(0xFF39A900),
             onTap: (index) {
-              // Al tocar un tab activamos el modo tabs y se mostrara su contenido
               setState(() {
-                mostrarHome = false;
+                mostrarHome = index == 0; // Si es la pestaña 0, estamos en Home
               });
-              // animacion para mover la seleccion del tab
-              _tabController.animateTo(index);
             },
             tabs: const [
-              Tab(icon: Icon(Icons.people), text: "Users"),
-              Tab(icon: Icon(Icons.shield), text: "Roles"),
-              Tab(icon: Icon(Icons.category), text: "Categories"),
-              Tab(icon: Icon(Icons.event), text: "Events"),
+              Tab(icon: Icon(Icons.home), text: "Home"),
+              Tab(icon: Icon(Icons.list_outlined), text: "Requests"),
+              Tab(icon: Icon(Icons.note_add), text: "Form"),
+              Tab(icon: Icon(Icons.person), text: "Profile"),
             ],
           ),
         ),
 
-        body: mostrarHome
-            ? const HomePrincipal()
-            : TabBarView(
-                controller: _tabController,
-                children: const [
-                  ViewUsers(),
-                  ViewRoles(),
-                  ViewCategories(),
-                  ViewEvents(),
-                ],
-              ),
+        body: TabBarView(
+          controller: _tabController,
+          children: const [
+            RequestDashboard(), // Vista de inicio (ESTA DEPENDERA DEL ROL)
+            ViewRequests(), // vista de las solicitudes
+            ViewsForm(),     // Vista del formulario
+            ViewProfile()      //Vista de perfil     
+          ],
+        ),
+
       ),
     );
   }

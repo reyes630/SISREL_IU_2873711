@@ -11,7 +11,7 @@ class Principal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title:  'App Mi Bienestar SENA',
+      title:  'SISREL',
       debugShowCheckedModeBanner: false,
       home: LoginView(),
     );
