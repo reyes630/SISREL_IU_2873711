@@ -16,10 +16,10 @@ class _RequestFormModalState extends State<RequestFormModal> {
         constraints: const BoxConstraints(maxHeight: 600),
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Edit- View Request'),
+            title: const Text('Edit Request'),
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: () {},
+              onPressed: () => Navigator.of(context).pop(),
             ),
             actions: [
               Padding(

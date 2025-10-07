@@ -25,6 +25,9 @@ class _ViewProfileState extends State<ViewProfile> {
             if (currentUser == null) {
               return const Center(child: CircularProgressIndicator());
             }
+
+            final isCoordinator = currentUser['coordinator'] == true;
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -84,6 +87,7 @@ class _ViewProfileState extends State<ViewProfile> {
                       0: FlexColumnWidth(1),
                       1: FlexColumnWidth(1),
                       2: FlexColumnWidth(1),
+                      3: FlexColumnWidth(1),
                     },
                     children: [
                       TableRow(
@@ -132,6 +136,18 @@ class _ViewProfileState extends State<ViewProfile> {
                               ),
                             ),
                           ),
+                          Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: Center(
+                              child: Text(
+                                'Coordinador',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       TableRow(
@@ -166,6 +182,21 @@ class _ViewProfileState extends State<ViewProfile> {
                               ),
                             ),
                           ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Center(
+                              child: Text(
+                                isCoordinator ? 'Sí' : 'No',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isCoordinator
+                                      ? Colors.green
+                                      : Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -179,7 +210,7 @@ class _ViewProfileState extends State<ViewProfile> {
                     },
                     icon: const Icon(Icons.edit, size: 20, color: Colors.white),
                     label: const Text(
-                      'Modifier',
+                      'Modificar',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

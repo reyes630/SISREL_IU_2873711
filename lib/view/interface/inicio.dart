@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 
 // Importamos vistas para las pestañas del TabBar
 
+import '../../controllers/reactController.dart';
 import '../../main.dart';
 //import '../Dashboards/dashboardAdmin.dart';
 import '../login/singIn.dart';
@@ -28,6 +29,8 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    final controller = Get.find<ReactController>();
+    controller.setTabController(_tabController);
 
     // Si cambia el tab (por swipe), salimos de Home automáticamente
     _tabController.addListener(() {

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ReactController extends GetxController {
@@ -9,6 +10,13 @@ class ReactController extends GetxController {
   final _isAuthenticated = false.obs;
   final _listRequest = [].obs;
   final _listClient = [].obs;
+  final _listMunicipalities = [].obs;
+  final _listServiceTypes = [].obs;
+  final _listEventType = [].obs;
+  final _listServices = [].obs;
+  
+  // Agregar TabController
+  TabController? _tabController;
 
   void setPagina(int newPage) {
     _pagina.value = newPage;
@@ -39,6 +47,31 @@ class ReactController extends GetxController {
     _listClient.value = newClient;
   }
 
+  void setListMunicipalities(List newMunicipalities){
+    _listMunicipalities.value = newMunicipalities;
+  }
+
+  void setServiceTypes(List newServiceTypes){
+    _listServiceTypes.value = newServiceTypes;
+  }
+
+  void setEventType(List newEeventType){
+    _listEventType.value = newEeventType;
+  }
+
+  void setServices(List newService){
+    _listServices.value = newService;
+  }
+
+  // Métodos para TabController
+  void setTabController(TabController controller) {
+    _tabController = controller;
+  }
+
+  void changeToTab(int index) {
+    _tabController?.animateTo(index);
+  }
+
   void saveLoginData(Map<String, dynamic> loginData) {
     if (loginData['token'] != null) {
       setAuthToken(loginData['token']);
@@ -66,4 +99,8 @@ class ReactController extends GetxController {
   bool get getIsAuthenticated => _isAuthenticated.value;
   List get getListRequest => _listRequest.value;
   List get getListClient => _listClient.value;
+  List get getListMunicipalities => _listMunicipalities.value;
+  List get getListServiceTypes => _listServiceTypes.value;
+  List get getListEventType => _listEventType.value;
+  List get getListService => _listServices.value;
 }

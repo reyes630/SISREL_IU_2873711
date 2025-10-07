@@ -1,9 +1,10 @@
+import 'package:app_adso_711_1/view/CRUD/editRequest%20copy.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../api/apiSisrel.dart';
 import '../../controllers/reactController.dart';
-import '../CRUD/editRequest.dart';
+import '../CRUD/viewRequest.dart';
 
 class ViewRequests extends StatefulWidget {
   const ViewRequests({super.key});
@@ -221,32 +222,40 @@ class _ViewRequestsState extends State<ViewRequests> {
                                     ),
 
                                     const SizedBox(height: 2),
-Chip(
-  label: Text(
-    request['serviceType']?['service']?['service'] ?? 'Sin servicio',
-    style: TextStyle(
-      color: parseApiColor(
-        request['serviceType']?['service']?['color']?.toString(),
-      ),
-      fontWeight: FontWeight.bold,
-      fontSize: 12,
-    ),
-  ),
-  backgroundColor: parseApiColor(
-    request['serviceType']?['service']?['color']?.toString(),
-  ).withOpacity(0.1),
-  side: BorderSide(
-    color: parseApiColor(
-      request['serviceType']?['service']?['color']?.toString(),
-    ),
-  ),
-  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: -2),
-  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-  visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-),
-
-
-
+                                    Chip(
+                                      label: Text(
+                                        request['serviceType']?['service']?['service'] ??
+                                            'Sin servicio',
+                                        style: TextStyle(
+                                          color: parseApiColor(
+                                            request['serviceType']?['service']?['color']
+                                                ?.toString(),
+                                          ),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      backgroundColor: parseApiColor(
+                                        request['serviceType']?['service']?['color']
+                                            ?.toString(),
+                                      ).withOpacity(0.1),
+                                      side: BorderSide(
+                                        color: parseApiColor(
+                                          request['serviceType']?['service']?['color']
+                                              ?.toString(),
+                                        ),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: -2,
+                                      ),
+                                      materialTapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: const VisualDensity(
+                                        horizontal: -4,
+                                        vertical: -4,
+                                      ),
+                                    ),
                                   ],
                                 ),
 
@@ -264,7 +273,6 @@ Chip(
                                                   context,
                                                 ).context.findRenderObject()
                                                 as RenderBox;
-
                                         // Posición: justo debajo y alineado a la derecha del botón
                                         final RelativeRect position =
                                             RelativeRect.fromRect(
@@ -327,6 +335,7 @@ Chip(
                                                     size: 18,
                                                     color: Colors.blue,
                                                   ),
+
                                                   SizedBox(width: 6),
                                                   Text(
                                                     "Editar",
@@ -390,8 +399,21 @@ Chip(
 
                                         // Manejo de acciones
                                         if (result != null) {
+                                          final request =
+                                              controller.getListRequest[index];
                                           switch (result) {
                                             case "view":
+                                              showDialog(
+                                                context: context,
+                                                builder: (BuildContext context) {
+                                                  return ViewRequestFormModal(
+                                                    requestId:
+                                                        request['id'], // ⬅️ Usa el ID de la solicitud actual
+                                                  );
+                                                },
+                                              );
+                                              break;
+                                            case "edit":
                                               showDialog(
                                                 context: context,
                                                 builder: (BuildContext context) {
@@ -399,11 +421,77 @@ Chip(
                                                 },
                                               );
                                               break;
-                                            case "edit":
-                                              print("Editar seleccionado");
-                                              break;
                                             case "delete":
-                                              print("Eliminar seleccionado");
+                                              // Mostrar diálogo de confirmación
+                                              final confirmed = await showDialog<bool>(
+                                                context: context,
+                                                builder: (BuildContext context) {
+                                                  return AlertDialog(
+                                                    title: const Text(
+                                                      'Confirmar eliminación',
+                                                    ),
+                                                    content: const Text(
+                                                      '¿Estás seguro de que deseas eliminar esta solicitud? Esta acción no se puede deshacer.',
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.of(
+                                                              context,
+                                                            ).pop(false),
+                                                        child: const Text(
+                                                          'Cancelar',
+                                                        ),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.of(
+                                                              context,
+                                                            ).pop(true),
+                                                        style:
+                                                            TextButton.styleFrom(
+                                                              foregroundColor:
+                                                                  Colors.red,
+                                                            ),
+                                                        child: const Text(
+                                                          'Eliminar',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              );
+
+                                              // eliminar
+                                              if (confirmed == true) {
+                                                try {
+                                                  final success =
+                                                      await deleteRequest(
+                                                        request['id'],
+                                                      );
+
+                                                  if (success) {
+                                                    Get.snackbar(
+                                                      'Éxito',
+                                                      'Solicitud eliminada correctamente',
+                                                      snackPosition:
+                                                          SnackPosition.BOTTOM,
+                                                      backgroundColor:
+                                                          Colors.green,
+                                                      colorText: Colors.white,
+                                                    );
+                                                  }
+                                                } catch (e) {
+                                                  Get.snackbar(
+                                                    'Error',
+                                                    'No se pudo eliminar la solicitud: ${e.toString()}',
+                                                    snackPosition:
+                                                        SnackPosition.BOTTOM,
+                                                    backgroundColor: Colors.red,
+                                                    colorText: Colors.white,
+                                                  );
+                                                }
+                                              }
                                               break;
                                             case "archive":
                                               print("Archivar seleccionado");
