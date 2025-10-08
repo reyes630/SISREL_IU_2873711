@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:app_adso_711_1/controllers/reactController.dart';
 
+
+import 'editProfile.dart';
+
 class ViewProfile extends StatefulWidget {
   const ViewProfile({super.key});
 
@@ -206,7 +209,30 @@ class _ViewProfileState extends State<ViewProfile> {
                 Center(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      // Acción para modificar perfil
+                      final currentUser = controller.getCurrentUser;
+                      if (currentUser != null) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return EditProfileModal(
+                              userData: currentUser,
+                            );
+                          },
+                        ).then((result) {
+                          if (result == true) {
+                            // Recargar los datos del usuario
+                            setState(() {});
+                          }
+                        });
+                      } else {
+                        Get.snackbar(
+                          'Error',
+                          'No se pueden cargar los datos del usuario',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: Colors.red,
+                          colorText: Colors.white,
+                        );
+                      }
                     },
                     icon: const Icon(Icons.edit, size: 20, color: Colors.white),
                     label: const Text(

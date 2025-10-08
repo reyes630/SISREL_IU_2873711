@@ -69,10 +69,59 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
               icon: const Icon(Icons.logout),
               tooltip: "Cerrar sesión",
               onPressed: () {
-                // Acción al cerrar sesión
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginView()),
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      title: const Row(
+                        children: [
+                          Icon(Icons.logout, color: Color(0xFF39A900)),
+                          SizedBox(width: 10),
+                          Text(
+                            'Cerrar Sesión',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      content: const Text(
+                        '¿Está seguro que desea cerrar sesión?',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            'Cancelar',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF39A900),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            // Close the dialog and navigate to login
+                            Navigator.of(context).pop();
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginView()),
+                            );
+                          },
+                          child: const Text('Cerrar Sesión'),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),

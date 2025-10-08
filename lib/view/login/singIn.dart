@@ -92,7 +92,7 @@ class _LoginViewState extends State<LoginView> {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            "assets/images/fondoLogin.png",
+            "assets/images/FondoLogin.png",
             fit: BoxFit.cover,
           ),
           Center(

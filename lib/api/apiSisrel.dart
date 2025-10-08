@@ -44,7 +44,7 @@ Future fetchRequest() async {
     final token = controller.getAuthToken;
 
     final response = await http.get(
-      Uri.parse('${baseUrl}/api/v1/request/'), // Agregamos ?populate=client
+      Uri.parse('${baseUrl}/api/v1/request'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
@@ -53,8 +53,14 @@ Future fetchRequest() async {
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      final requestsData = jsonResponse['data'];
-      controller.setRequest(requestsData);
+      final List allRequests = jsonResponse['data'];
+      
+      // Filter non-archived requests (archive_status = 0 or null)
+      final activeRequests = allRequests.where((request) => 
+        request['archive_status'] == 0 || request['archive_status'] == null
+      ).toList();
+      
+      controller.setRequest(activeRequests);
     } else if (response.statusCode == 401) {
       controller.logout();
       throw Exception('Sesión expirada. Por favor inicie sesión nuevamente.');
@@ -328,6 +334,75 @@ Future<Map<String, dynamic>> fetchRequestById(int requestId) async {
 }
 
 
+// ACTUALIZAR SOLICITUD
+
+Future<void> updateRequest(int requestId, Map<String, dynamic> updateData) async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/v1/request/$requestId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(updateData),
+    );
+
+    if (response.statusCode == 200) {
+      // Actualizar la lista de solicitudes después de la actualización
+      await fetchRequest();
+    } else if (response.statusCode == 401) {
+      controller.logout();
+      throw Exception('Sesión expirada. Por favor inicie sesión nuevamente.');
+    } else {
+      throw Exception('Error al actualizar la solicitud');
+    }
+  } catch (e) {
+    throw Exception('Error: ${e.toString()}');
+  }
+}
+
+// SOLICITUDES ARCHIVADAS
+
+Future<void> fetchArchivedRequests() async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+
+    final response = await http.get(
+      Uri.parse('${baseUrl}/api/v1/request'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final List allRequests = jsonResponse['data'];
+      
+      // Filter archived requests (archive_status = 1)
+      final archivedRequests = allRequests.where((request) => 
+        request['archive_status'] == 1
+      ).toList();
+      
+      // Set archived requests in controller
+      controller.setArchivedRequests(archivedRequests);
+    } else if (response.statusCode == 401) {
+      controller.logout();
+      throw Exception('Sesión expirada. Por favor inicie sesión nuevamente.');
+    } else {
+      throw Exception('Error al cargar las solicitudes archivadas');
+    }
+  } catch (e) {
+    print('Error fetching archived requests: $e');
+    throw Exception('Error: ${e.toString()}');
+  }
+}
+
+
 // ---------------------------------------- SERVICIOS ---------------------------------------
 Future fetchServices() async {
   try {
@@ -357,3 +432,232 @@ Future fetchServices() async {
   }
 }
 
+// ---------------------------------------- ESTADOS ---------------------------------------
+
+Future fetchStates() async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+
+    final response = await http.get(
+      Uri.parse('${baseUrl}/api/v1/states'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      // Extract the data array from the response
+      final List<dynamic> statesData = jsonResponse['data'] as List<dynamic>;
+      controller.setStates(statesData);
+    } else {
+      throw Exception('Error al cargar los estados');
+    }
+  } catch (e) {
+    print('Error fetching states: $e');
+    throw Exception('Error: ${e.toString()}');
+  }
+}
+
+// ---------------------------------------- USUARIOS ASIGNADOS ---------------------------------------
+
+Future<void> fetchAssignableUsers() async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+
+    final response = await http.get(
+      Uri.parse('${baseUrl}/api/v1/users'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = json.decode(response.body);
+      final List allUsers = jsonResponse['data'];
+      
+      // Filter users with roles 5 or 6
+      final assignableUsers = allUsers.where((user) => 
+        user['FKroles'] == 5 || user['FKroles'] == 6
+      ).toList();
+      
+      controller.setAssignableUsers(assignableUsers);
+    } else {
+      throw Exception('Error al cargar los usuarios asignables');
+    }
+  } catch (e) {
+    throw Exception('Error: ${e.toString()}');
+  }
+}
+
+// ---------------------------------------- EDITAR USUARIO ---------------------------------------
+Future<void> updateUserProfile(Map<String, dynamic> updateData) async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+    final currentUser = controller.getCurrentUser;
+
+    if (currentUser == null) {
+      throw Exception('No se encontró el usuario actual');
+    }
+
+    // Datos que coinciden con la estructura de la base de datos
+    final userData = {
+      'documentUser': updateData['documentUser'],
+      'nameUser': updateData['nameUser'],
+      'emailUser': updateData['emailUser'],
+      'telephoneUser': updateData['telephoneUser'],
+      'FKroles': currentUser['FKroles'],
+      'coordinator': currentUser['coordinator'],
+      'passwordUser': currentUser['passwordUser'], // Mantener la contraseña actual
+    };
+
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/v1/users/${currentUser['id']}'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(userData),
+    );
+
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      controller.setCurrentUser(jsonResponse['data']);
+      await fetchUsers();
+    } else {
+      throw Exception('Error al actualizar el perfil: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Error al actualizar: ${e.toString()}');
+  }
+}
+
+// ---------------------------------------- GRAFICA ---------------------------------------
+Future<Map<String, dynamic>> fetchServicesStatistics() async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/v1/request'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List requests = jsonResponse['data'];
+      
+      // Agrupar solicitudes por servicio
+      Map<String, int> serviceCount = {};
+      Map<String, String> serviceColors = {};
+
+      for (var request in requests) {
+        final serviceName = request['serviceType']?['service']?['service'] ?? 'Sin servicio';
+        final serviceColor = request['serviceType']?['service']?['color'] ?? '#000000';
+        
+        serviceCount[serviceName] = (serviceCount[serviceName] ?? 0) + 1;
+        serviceColors[serviceName] = serviceColor;
+      }
+
+      return {
+        'counts': serviceCount,
+        'colors': serviceColors,
+      };
+    } else {
+      throw Exception('Error al obtener estadísticas de servicios');
+    }
+  } catch (e) {
+    throw Exception('Error: ${e.toString()}');
+  }
+}
+
+Future<Map<String, dynamic>> fetchMunicipalityStatistics() async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/v1/request'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List requests = jsonResponse['data'];
+      
+      // Agrupar solicitudes por municipio
+      Map<String, int> municipalityCount = {};
+
+      for (var request in requests) {
+        final municipality = request['municipality'] ?? 'Sin municipio';
+        municipalityCount[municipality] = (municipalityCount[municipality] ?? 0) + 1;
+      }
+
+      // Ordenar municipios por cantidad de solicitudes
+      var sortedEntries = municipalityCount.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      return {
+        'counts': Map.fromEntries(sortedEntries),
+      };
+    } else {
+      throw Exception('Error al obtener estadísticas de municipios');
+    }
+  } catch (e) {
+    throw Exception('Error: ${e.toString()}');
+  }
+}
+
+Future<Map<String, dynamic>> fetchStateStatistics() async {
+  try {
+    final ReactController controller = Get.find<ReactController>();
+    final token = controller.getAuthToken;
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/v1/request'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List requests = jsonResponse['data'];
+      
+      // Agrupar solicitudes por estado
+      Map<String, int> stateCount = {};
+      Map<String, String> stateColors = {};
+
+      for (var request in requests) {
+        final stateName = request['State']?['State'] ?? 'Sin estado';
+        final stateColor = request['State']?['color'] ?? '#000000';
+        
+        stateCount[stateName] = (stateCount[stateName] ?? 0) + 1;
+        stateColors[stateName] = stateColor;
+      }
+
+      return {
+        'counts': stateCount,
+        'colors': stateColors,
+      };
+    } else {
+      throw Exception('Error al obtener estadísticas de estados');
+    }
+  } catch (e) {
+    throw Exception('Error: ${e.toString()}');
+  }
+}

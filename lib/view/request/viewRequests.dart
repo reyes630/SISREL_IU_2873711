@@ -1,10 +1,11 @@
-import 'package:app_adso_711_1/view/CRUD/editRequest%20copy.dart';
+import 'package:app_adso_711_1/view/CRUD/editRequest.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../api/apiSisrel.dart';
 import '../../controllers/reactController.dart';
 import '../CRUD/viewRequest.dart';
+import 'archiveRequest.dart';
 
 class ViewRequests extends StatefulWidget {
   const ViewRequests({super.key});
@@ -17,10 +18,16 @@ class _ViewRequestsState extends State<ViewRequests> {
   final ReactController controller = Get.find<ReactController>();
   String? selectedValue;
 
+  // Add these variables at the start of _ViewRequestsState class
+  String searchText = '';
+  List<Map<String, dynamic>> filteredRequests = [];
+
   @override
   void initState() {
     super.initState();
     fetchRequest();
+    fetchStates(); // Add this line to load states
+    fetchServices(); // Agregar esta línea
   }
 
   Color parseApiColor(String? hexColor) {
@@ -60,59 +67,221 @@ class _ViewRequestsState extends State<ViewRequests> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Selector (Dropdown)
-            SizedBox(
-              height: 40,
-              child: DropdownButtonFormField<String>(
-                value: selectedValue,
-                hint: const Text(
-                  "Seleccionar filtro",
-                  style: TextStyle(fontSize: 16),
-                ),
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 5,
+            Column(
+              children: [
+                // Selector (Dropdown)
+                SizedBox(
+                  height: 40,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedValue,
+                    hint: const Text(
+                      "Seleccionar filtro",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: "op1", child: Text("Cliente")),
+                      DropdownMenuItem(value: "op2", child: Text("Estado")),
+                      DropdownMenuItem(value: "op3", child: Text("Servicio")),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        selectedValue = value;
+                        searchText = ''; // Reset search when filter changes
+                      });
+                    },
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
                 ),
-                items: const [
-                  DropdownMenuItem(value: "op1", child: Text("Cliente")),
-                  DropdownMenuItem(value: "op2", child: Text("Estado")),
-                  DropdownMenuItem(value: "op3", child: Text("Servicio")),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    selectedValue = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 5),
+                const SizedBox(height: 5),
 
-            // Buscador (TextField con icono)
-            SizedBox(
-              height: 40,
-              child: TextField(
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 5,
-                  ),
-                  hintText: "Buscar...",
-                  hintStyle: TextStyle(fontSize: 16),
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[200],
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 40,
+                        child: selectedValue == "op2"
+                            ? // Dropdown para Estados
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.grey),
+                                ),
+                                child: Obx(() {
+                                  final states = controller.getListStates;
+                                  return DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: searchText.isEmpty ? null : searchText,
+                                      isExpanded: true,
+                                      hint: const Text("Seleccionar estado"),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                      items: states.map((state) {
+                                        Color stateColor = Colors.grey;
+                                        if (state['color'] != null) {
+                                          try {
+                                            stateColor = parseApiColor(
+                                              state['color'],
+                                            );
+                                          } catch (e) {
+                                            stateColor = Colors.grey;
+                                          }
+                                        }
+
+                                        return DropdownMenuItem<String>(
+                                          value: state['id'].toString(),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                width: 16,
+                                                height: 16,
+                                                margin: const EdgeInsets.only(
+                                                  right: 8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: stateColor.withOpacity(0.7),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                              Text(state['State']),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          searchText = value ?? '';
+                                        });
+                                      },
+                                    ),
+                                  );
+                                }),
+                              )
+                            : selectedValue == "op3"
+                                ? // Dropdown para Servicios
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.grey),
+                                    ),
+                                    child: Obx(() {
+                                      final services = controller.getListService;
+                                      return DropdownButtonHideUnderline(
+                                        child: DropdownButton<String>(
+                                          value: searchText.isEmpty ? null : searchText,
+                                          isExpanded: true,
+                                          hint: const Text("Seleccionar servicio"),
+                                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                                          items: services.map((service) {
+                                            Color serviceColor = Colors.grey;
+                                            if (service['color'] != null) {
+                                              try {
+                                                serviceColor = parseApiColor(service['color']);
+                                              } catch (e) {
+                                                serviceColor = Colors.grey;
+                                              }
+                                            }
+                                            
+                                            return DropdownMenuItem<String>(
+                                              value: service['id'].toString(),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    width: 16,
+                                                    height: 16,
+                                                    margin: const EdgeInsets.only(right: 8),
+                                                    decoration: BoxDecoration(
+                                                      color: serviceColor.withOpacity(0.7),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                  ),
+                                                  Text(service['service']),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: (value) {
+                                            setState(() {
+                                              searchText = value ?? '';
+                                            });
+                                          },
+                                        ),
+                                      );
+                                    }),
+                                  )
+                                : // TextField para búsqueda por cliente
+                                  TextField(
+                                    decoration: InputDecoration(
+                                      contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 5,
+                                      ),
+                                      hintText: "Buscar por cliente...",
+                                      prefixIcon: const Icon(Icons.search),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.grey[200],
+                                    ),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        searchText = value;
+                                      });
+                                    },
+                                  ),
+                      ),
+                    ),
+                    if (selectedValue != null || searchText.isNotEmpty) 
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Limpiar filtros',
+                          onPressed: () {
+                            setState(() {
+                              selectedValue = null;
+                              searchText = '';
+                            });
+                          },
+                        ),
+                      ),
+                  ],
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+
+            // Botón de Archivados
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ArchivedRequests(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.archive),
+                  label: const Text('Archivados'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
 
             // Lista de items
             Expanded(
@@ -125,10 +294,41 @@ class _ViewRequestsState extends State<ViewRequests> {
                   );
                 }
 
+                var filteredRequests = requests.where((request) {
+                  if (searchText.isEmpty) return true;
+
+                  switch (selectedValue) {
+                    case "op1": // Cliente
+                      final clientName =
+                          request['Client']?['NameClient']
+                              ?.toString()
+                              .toLowerCase() ??
+                          '';
+                      return clientName.contains(searchText.toLowerCase());
+
+                    case "op2": // Estado
+                      final stateId = request['FKstates']?.toString() ?? '';
+                      return stateId == searchText;
+
+                    case "op3": // Servicio
+                      final serviceId = request['serviceType']?['service']?['id']?.toString() ?? '';
+                      return serviceId == searchText;
+
+                    default:
+                      return true;
+                  }
+                }).toList();
+
+                if (filteredRequests.isEmpty) {
+                  return const Center(
+                    child: Text('No se encontraron resultados'),
+                  );
+                }
+
                 return ListView.builder(
-                  itemCount: requests.length,
+                  itemCount: filteredRequests.length,
                   itemBuilder: (context, index) {
-                    final request = requests[index];
+                    final request = filteredRequests[index];
                     final createdAt = request['createdAt'] ?? '';
 
                     return Card(
@@ -297,15 +497,14 @@ class _ViewRequestsState extends State<ViewRequests> {
                                           context: context,
                                           position: position,
                                           items: [
-                                            PopupMenuItem(
+                                            const PopupMenuItem(
                                               value: "view",
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 0,
-                                                  ), // menos espacio
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 0,
+                                              ),
                                               child: Row(
-                                                children: const [
+                                                children: [
                                                   Icon(
                                                     Icons.visibility,
                                                     size: 18,
@@ -321,21 +520,19 @@ class _ViewRequestsState extends State<ViewRequests> {
                                                 ],
                                               ),
                                             ),
-                                            PopupMenuItem(
+                                            const PopupMenuItem(
                                               value: "edit",
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 0,
-                                                  ),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 0,
+                                              ),
                                               child: Row(
-                                                children: const [
+                                                children: [
                                                   Icon(
                                                     Icons.edit,
                                                     size: 18,
                                                     color: Colors.blue,
                                                   ),
-
                                                   SizedBox(width: 6),
                                                   Text(
                                                     "Editar",
@@ -346,15 +543,14 @@ class _ViewRequestsState extends State<ViewRequests> {
                                                 ],
                                               ),
                                             ),
-                                            PopupMenuItem(
+                                            const PopupMenuItem(
                                               value: "delete",
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 0,
-                                                  ),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 0,
+                                              ),
                                               child: Row(
-                                                children: const [
+                                                children: [
                                                   Icon(
                                                     Icons.delete,
                                                     size: 18,
@@ -370,30 +566,32 @@ class _ViewRequestsState extends State<ViewRequests> {
                                                 ],
                                               ),
                                             ),
-                                            PopupMenuItem(
-                                              value: "archive",
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 0,
-                                                  ),
-                                              child: Row(
-                                                children: const [
-                                                  Icon(
-                                                    Icons.archive,
-                                                    size: 18,
-                                                    color: Colors.green,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Text(
-                                                    "Archivar",
-                                                    style: TextStyle(
-                                                      fontSize: 14,
+                                            // Show archive option only for Resuelto (6) or Cerrado (7) states
+                                            if (request['FKstates'] == 6 ||
+                                                request['FKstates'] == 7)
+                                              const PopupMenuItem(
+                                                value: "archive",
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 0,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.archive,
+                                                      size: 18,
+                                                      color: Colors.green,
                                                     ),
-                                                  ),
-                                                ],
+                                                    SizedBox(width: 6),
+                                                    Text(
+                                                      "Archivar",
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
                                           ],
                                         );
 
@@ -407,8 +605,7 @@ class _ViewRequestsState extends State<ViewRequests> {
                                                 context: context,
                                                 builder: (BuildContext context) {
                                                   return ViewRequestFormModal(
-                                                    requestId:
-                                                        request['id'], // ⬅️ Usa el ID de la solicitud actual
+                                                    requestId: request['id'],
                                                   );
                                                 },
                                               );
@@ -416,9 +613,14 @@ class _ViewRequestsState extends State<ViewRequests> {
                                             case "edit":
                                               showDialog(
                                                 context: context,
-                                                builder: (BuildContext context) {
-                                                  return const RequestFormModal();
-                                                },
+                                                builder:
+                                                    (BuildContext context) {
+                                                      return RequestFormModal(
+                                                        requestId:
+                                                            request['id'],
+                                                        initialData: request,
+                                                      );
+                                                    },
                                               );
                                               break;
                                             case "delete":
@@ -494,7 +696,39 @@ class _ViewRequestsState extends State<ViewRequests> {
                                               }
                                               break;
                                             case "archive":
-                                              print("Archivar seleccionado");
+                                              try {
+                                                // Update request with archive_status = true (1)
+                                                Map<String, dynamic>
+                                                archiveData = {
+                                                  'archive_status': 1,
+                                                };
+
+                                                await updateRequest(
+                                                  request['id'],
+                                                  archiveData,
+                                                );
+
+                                                // Refresh the requests list
+                                                await fetchRequest();
+
+                                                Get.snackbar(
+                                                  'Éxito',
+                                                  'Solicitud archivada correctamente',
+                                                  snackPosition:
+                                                      SnackPosition.BOTTOM,
+                                                  backgroundColor: Colors.green,
+                                                  colorText: Colors.white,
+                                                );
+                                              } catch (e) {
+                                                Get.snackbar(
+                                                  'Error',
+                                                  'No se pudo archivar la solicitud: ${e.toString()}',
+                                                  snackPosition:
+                                                      SnackPosition.BOTTOM,
+                                                  backgroundColor: Colors.red,
+                                                  colorText: Colors.white,
+                                                );
+                                              }
                                               break;
                                           }
                                         }

@@ -27,9 +27,18 @@ class _ViewRequestFormModalState extends State<ViewRequestFormModal> {
 
   Future<void> loadRequestData() async {
     try {
-      final data = await fetchRequestById(widget.requestId);
+      // Cargar datos en paralelo
+      await Future.wait([
+        fetchAssignableUsers(), // Agregar esta línea
+        Future(() async {
+          final data = await fetchRequestById(widget.requestId);
+          setState(() {
+            requestData = data;
+          });
+        }),
+      ]);
+
       setState(() {
-        requestData = data;
         isLoading = false;
       });
     } catch (e) {
@@ -130,7 +139,7 @@ class _ViewRequestFormModalState extends State<ViewRequestFormModal> {
                       const SizedBox(height: 20),
 
                       _buildSection(
-                        'Fecha de solicitud',
+                        'Fecha de Evento',
                         formatDate(requestData?['eventDate']),
                       ),
                       const SizedBox(height: 20),
@@ -286,9 +295,26 @@ class _ViewRequestFormModalState extends State<ViewRequestFormModal> {
                       ),
                       const SizedBox(height: 20),
 
+                      // Responsable Asignado - Buscando en la lista de usuarios asignables
                       _buildSection(
                         'Responsable Asignado',
-                        requestData?['assignment'] ?? 'Sin asignar',
+                        () {
+                          final assignmentId = requestData?['assignment'];
+                          if (assignmentId == null || assignmentId == '') return 'Sin asignar';
+                          
+                          final users = controller.getAssignableUsers;
+                          final assignedUser = users.firstWhere(
+                            (user) => user['id'].toString() == assignmentId.toString(),
+                            orElse: () => {'nameUser': 'Usuario no encontrado', 'FKroles': null},
+                          );
+                          
+                          // Obtener el nombre del rol
+                          String roleText = assignedUser['FKroles'] == 5 ? 'Instructor' : 
+                                           assignedUser['FKroles'] == 6 ? 'Funcionario' : 
+                                           'Rol desconocido';
+                          
+                          return '${assignedUser['nameUser']} (${roleText})';
+                        }(),
                       ),
                       const SizedBox(height: 30),
 

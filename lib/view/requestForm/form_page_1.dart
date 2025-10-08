@@ -409,7 +409,11 @@ class _ViewsFormState extends State<ViewsForm> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: nextPage,
+                              onPressed: () {
+                                if (_validateFirstPage()) {
+                                  nextPage();
+                                }
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF09669C),
                                 foregroundColor: Colors.white,
@@ -1044,6 +1048,51 @@ class _ViewsFormState extends State<ViewsForm> {
       );
       return false;
     }
+    return true;
+  }
+
+  // Primero, agrega este método para validar la primera página
+  bool _validateFirstPage() {
+    if (documentController.text.isEmpty ||
+        nameController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        telephoneController.text.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Por favor complete todos los campos requeridos',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
+    // Validar formato de email
+    if (!emailController.text.contains('@') ||
+        !emailController.text.contains('.')) {
+      Get.snackbar(
+        'Error',
+        'Por favor ingrese un correo electrónico válido',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
+    // Validar formato de teléfono (10 dígitos)
+    if (telephoneController.text.length != 10 ||
+        !RegExp(r'^[0-9]+$').hasMatch(telephoneController.text)) {
+      Get.snackbar(
+        'Error',
+        'Por favor ingrese un número de teléfono válido (10 dígitos)',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
     return true;
   }
 

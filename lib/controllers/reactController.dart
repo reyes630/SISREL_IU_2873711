@@ -14,7 +14,10 @@ class ReactController extends GetxController {
   final _listServiceTypes = [].obs;
   final _listEventType = [].obs;
   final _listServices = [].obs;
-  
+  final _listStates = [].obs;
+  final _archivedRequests = [].obs;
+  final _assignableUsers = [].obs;
+
   // Agregar TabController
   TabController? _tabController;
 
@@ -72,6 +75,18 @@ class ReactController extends GetxController {
     _tabController?.animateTo(index);
   }
 
+  void setStates(List newStates) {
+  _listStates.value = newStates;
+}
+
+void setArchivedRequests(List newArchivedRequests) {
+  _archivedRequests.value = newArchivedRequests;
+}
+
+void setAssignableUsers(List users) {
+  _assignableUsers.value = users;
+}
+
   void saveLoginData(Map<String, dynamic> loginData) {
     if (loginData['token'] != null) {
       setAuthToken(loginData['token']);
@@ -103,4 +118,7 @@ class ReactController extends GetxController {
   List get getListServiceTypes => _listServiceTypes.value;
   List get getListEventType => _listEventType.value;
   List get getListService => _listServices.value;
+  List get getListStates => _listStates.value;
+  List get getArchivedRequests => _archivedRequests.value;
+  List get getAssignableUsers => _assignableUsers.value;
 }
