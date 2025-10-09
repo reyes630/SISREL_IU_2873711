@@ -768,9 +768,9 @@ class _ViewsFormState extends State<ViewsForm> {
                                   showCheckmark: false,
                                   onSelected: (selected) {
                                     setState(() {
-                                      selectedServiceId = selected
-                                          ? service['id'].toString()
-                                          : null;
+                                      selectedServiceId = selected ? service['id'].toString() : null;
+                                      selectedServiceType = null; // Resetear el tipo de servicio
+                                      print('Servicio seleccionado: $selectedServiceId');
                                     });
                                   },
                                 );
@@ -805,11 +805,26 @@ class _ViewsFormState extends State<ViewsForm> {
                               );
                             }
 
+                            // Depuración
+                            print('Todos los tipos de servicio: ${serviceTypes.length}');
+                            serviceTypes.forEach((type) {
+                              print('Tipo: ${type['serviceType']}, FKservices: ${type['FKservices']}, ID: ${type['id']}');
+                            });
+
+                            // Filtrar tipos de servicio basado en el servicio seleccionado
+                            final filteredServiceTypes = selectedServiceId != null 
+                                ? serviceTypes.where((type) {
+                                    print('Comparando: type[FKservices]=${type['FKservices']}, selectedServiceId=$selectedServiceId');
+                                    return type['FKservices'].toString() == selectedServiceId.toString();
+                                  }).toList()
+                                : [];
+
+                            print('Tipos de servicio filtrados: ${filteredServiceTypes.length}');
+                            print('Servicio seleccionado ID: $selectedServiceId');
+
                             return Container(
                               height: 35,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(25),
@@ -818,32 +833,33 @@ class _ViewsFormState extends State<ViewsForm> {
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
                                   value: selectedServiceType,
-                                  hint: const Text(
-                                    'Selecciona una opción',
-                                    style: TextStyle(fontSize: 12),
+                                  hint: Text(
+                                    selectedServiceId == null 
+                                        ? 'Primero seleccione un servicio'
+                                        : filteredServiceTypes.isEmpty
+                                            ? 'No hay tipos disponibles para este servicio'
+                                            : 'Seleccione un tipo de servicio',
+                                    style: const TextStyle(fontSize: 12),
                                   ),
                                   isExpanded: true,
                                   icon: const Icon(Icons.keyboard_arrow_down),
-                                  items: serviceTypes
-                                      .map<DropdownMenuItem<String>>((
-                                        serviceType,
-                                      ) {
-                                        return DropdownMenuItem<String>(
-                                          value: serviceType['id'].toString(),
-                                          child: Text(
-                                            serviceType['serviceType'],
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        );
-                                      })
-                                      .toList(),
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      selectedServiceType = newValue;
-                                    });
-                                  },
+                                  items: filteredServiceTypes.map<DropdownMenuItem<String>>((serviceType) {
+                                    return DropdownMenuItem<String>(
+                                      value: serviceType['id'].toString(),
+                                      child: Text(
+                                        serviceType['serviceType'] ?? 'Sin nombre',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: filteredServiceTypes.isEmpty 
+                                      ? null 
+                                      : (String? newValue) {
+                                          setState(() {
+                                            selectedServiceType = newValue;
+                                            print('Tipo de servicio seleccionado: $newValue');
+                                          });
+                                        },
                                 ),
                               ),
                             );
