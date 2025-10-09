@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 
 import '../../api/apiSisrel.dart';
 import '../../controllers/reactController.dart';
@@ -15,10 +17,6 @@ class _ViewsFormState extends State<ViewsForm> {
   bool showSecondPage = false;
   int selectedServiceIndex = -1;
   final ReactController controller = Get.put(ReactController());
-  String? selectedMunicipio; // guardar el valor seleccionado
-  String? selectedServiceType;
-  String? selectedEventType;
-  String? selectedServiceId;
   final documentController = TextEditingController();
   final nameController = TextEditingController();
   final emailController = TextEditingController();
@@ -28,7 +26,30 @@ class _ViewsFormState extends State<ViewsForm> {
   final TextEditingController needDescriptionController =
       TextEditingController();
 
+  String? selectedServiceId;
+  String? selectedServiceType;
+  String? selectedEventType;
   DateTime? selectedDate;
+
+  // Modifica las variables reactivas
+  final Rx<DateTime?> _selectedDate = Rx<DateTime?>(null);
+  final RxString _selectedMunicipio = RxString('');
+  final RxString _selectedServiceType = RxString('');
+  final RxString _selectedEventType = RxString('');
+
+  // Agregar variables para controlar el estado de los campos
+  Map<String, bool> fieldStates = {
+    'document': false,
+    'name': false,
+    'email': false,
+    'telephone': false,
+    'location': false,
+    'needDescription': false,
+    'date': false,            // Agregar para fecha
+    'municipality': false,    // Agregar para municipio
+    'serviceType': false,     // Agregar para tipo servicio
+    'eventType': false,       // Agregar para tipo evento
+  };
 
   @override
   void dispose() {
@@ -49,6 +70,68 @@ class _ViewsFormState extends State<ViewsForm> {
     fetchServiceTypes();
     fetchEventTypes();
     fetchServices(); // Agregar esta línea
+
+    // Agregar listeners a los controladores
+    documentController.addListener(() {
+      setState(() {
+        fieldStates['document'] = documentController.text.isNotEmpty;
+      });
+    });
+
+    nameController.addListener(() {
+      setState(() {
+        fieldStates['name'] = nameController.text.isNotEmpty;
+      });
+    });
+
+    emailController.addListener(() {
+      setState(() {
+        fieldStates['email'] = emailController.text.isNotEmpty;
+      });
+    });
+
+    telephoneController.addListener(() {
+      setState(() {
+        fieldStates['telephone'] = telephoneController.text.isNotEmpty;
+      });
+    });
+
+    locationController.addListener(() {
+      setState(() {
+        fieldStates['location'] = locationController.text.isNotEmpty;
+      });
+    });
+
+    needDescriptionController.addListener(() {
+      setState(() {
+        fieldStates['needDescription'] = needDescriptionController.text.isNotEmpty;
+      });
+    });
+
+    // Modifica los observers para usar las variables Rx
+    ever(_selectedDate, (_) {
+      setState(() {
+        fieldStates['date'] = _selectedDate.value != null;
+      });
+    });
+
+    ever(_selectedMunicipio, (_) {
+      setState(() {
+        fieldStates['municipality'] = _selectedMunicipio.value.isNotEmpty;
+      });
+    });
+
+    ever(_selectedServiceType, (_) {
+      setState(() {
+        fieldStates['serviceType'] = _selectedServiceType.value.isNotEmpty;
+      });
+    });
+
+    ever(_selectedEventType, (_) {
+      setState(() {
+        fieldStates['eventType'] = _selectedEventType.value.isNotEmpty;
+      });
+    });
   }
 
   void nextPage() {
@@ -61,6 +144,75 @@ class _ViewsFormState extends State<ViewsForm> {
     setState(() {
       showSecondPage = false;
     });
+  }
+
+  // Crear un método helper para el borde
+  OutlineInputBorder _getBorder(String fieldKey) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(25),
+      borderSide: BorderSide(
+        color: fieldStates[fieldKey] == true 
+            ? const Color.fromARGB(255, 76, 244, 54)
+            : Colors.red,
+        width: 2,
+      ),
+    );
+  }
+
+  // Modificar la decoración de los campos para usar el nuevo borde
+  InputDecoration _getInputDecoration(String fieldKey, {String? hintText}) {
+    return InputDecoration(
+      hintText: hintText,
+      filled: true,
+      fillColor: Colors.white,
+      border: _getBorder(fieldKey),
+      enabledBorder: _getBorder(fieldKey),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(25),
+        borderSide: const BorderSide(
+          color: Color.fromARGB(255, 76, 244, 54),
+          width: 2,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 5,
+      ),
+    );
+  }
+
+  // Actualizar la decoración para los dropdowns
+  InputDecoration _getDropdownDecoration(String fieldKey) {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(25),
+        borderSide: BorderSide(
+          color: fieldStates[fieldKey] == true 
+              ? const Color.fromARGB(255, 76, 244, 54)
+              : Colors.red,
+          width: 2,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(25),
+        borderSide: BorderSide(
+          color: fieldStates[fieldKey] == true 
+              ? const Color.fromARGB(255, 76, 244, 54)
+              : Colors.red,
+          width: 2,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(25),
+        borderSide: const BorderSide(
+          color: Color.fromARGB(255, 76, 244, 54),
+          width: 2,
+        ),
+      ),
+    );
   }
 
   @override
@@ -163,36 +315,7 @@ class _ViewsFormState extends State<ViewsForm> {
                                 child: TextFormField(
                                   controller: documentController,
                                   style: const TextStyle(fontSize: 12),
-                                  decoration: InputDecoration(
-                                    hintText: '123456789',
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Color.fromARGB(255, 76, 244, 54),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                  ),
+                                  decoration: _getInputDecoration('document', hintText: '123456789'),
                                 ),
                               ),
                             ],
@@ -230,36 +353,7 @@ class _ViewsFormState extends State<ViewsForm> {
                                 child: TextFormField(
                                   controller: nameController,
                                   style: const TextStyle(fontSize: 12),
-                                  decoration: InputDecoration(
-                                    hintText: 'Nombre Apellido',
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Color.fromARGB(255, 76, 244, 54),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                  ),
+                                  decoration: _getInputDecoration('name', hintText: 'Nombre Apellido'),
                                 ),
                               ),
                             ],
@@ -298,36 +392,7 @@ class _ViewsFormState extends State<ViewsForm> {
                                   controller: emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   style: const TextStyle(fontSize: 12),
-                                  decoration: InputDecoration(
-                                    hintText: 'correo@example.com',
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Color.fromARGB(255, 76, 244, 54),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                  ),
+                                  decoration: _getInputDecoration('email', hintText: 'correo@example.com'),
                                 ),
                               ),
                             ],
@@ -366,39 +431,7 @@ class _ViewsFormState extends State<ViewsForm> {
                                   controller: telephoneController,
                                   keyboardType: TextInputType.phone,
                                   style: const TextStyle(fontSize: 12),
-                                  decoration: InputDecoration(
-                                    hintText: '3110000000',
-                                    hintStyle: const TextStyle(
-                                      color: Colors.grey,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Colors.red,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                      borderSide: const BorderSide(
-                                        color: Color.fromARGB(255, 76, 244, 54),
-                                        width: 2,
-                                      ),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                  ),
+                                  decoration: _getInputDecoration('telephone', hintText: '3110000000'),
                                 ),
                               ),
                             ],
@@ -508,45 +541,14 @@ class _ViewsFormState extends State<ViewsForm> {
                             child: TextFormField(
                               readOnly: true,
                               controller: TextEditingController(
-                                text: selectedDate == null
+                                text: _selectedDate.value == null
                                     ? ''
-                                    : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year} ${selectedDate!.hour}:${selectedDate!.minute.toString().padLeft(2, '0')}',
+                                    : '${_selectedDate.value!.day}/${_selectedDate.value!.month}/${_selectedDate.value!.year} ${_selectedDate.value!.hour}:${_selectedDate.value!.minute.toString().padLeft(2, '0')}',
                               ),
                               style: const TextStyle(fontSize: 12),
-                              decoration: InputDecoration(
-                                hintText: 'Selecciona la fecha',
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: const BorderSide(
-                                    color: Color.fromARGB(255, 76, 244, 54),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                              ),
+                              decoration: _getDropdownDecoration('date'),
                               onTap: () async {
-                                FocusScope.of(context).requestFocus(
-                                  FocusNode(),
-                                ); // evita abrir teclado
+                                FocusScope.of(context).requestFocus(FocusNode());
                                 final pickedDate = await showDatePicker(
                                   context: context,
                                   initialDate: DateTime.now(),
@@ -556,13 +558,14 @@ class _ViewsFormState extends State<ViewsForm> {
 
                                 if (pickedDate != null) {
                                   setState(() {
-                                    selectedDate = DateTime(
+                                    _selectedDate.value = DateTime(
                                       pickedDate.year,
                                       pickedDate.month,
                                       pickedDate.day,
                                       DateTime.now().hour,
                                       DateTime.now().minute,
                                     );
+                                    fieldStates['date'] = true; // Actualizar el estado cuando se selecciona fecha
                                   });
                                 }
                               },
@@ -613,17 +616,19 @@ class _ViewsFormState extends State<ViewsForm> {
 
                             return Container(
                               height: 35,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(25),
-                                border: Border.all(color: Colors.red, width: 2),
+                                border: Border.all(
+                                  color: fieldStates['municipality'] == true 
+                                      ? const Color.fromARGB(255, 76, 244, 54)
+                                      : Colors.red,
+                                  width: 2,
+                                ),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
-                                  value: selectedMunicipio,
+                                  value: _selectedMunicipio.value.isEmpty ? null : _selectedMunicipio.value,
                                   hint: const Text(
                                     'Selecciona un municipio',
                                     style: TextStyle(fontSize: 12),
@@ -642,7 +647,8 @@ class _ViewsFormState extends State<ViewsForm> {
                                       .toList(),
                                   onChanged: (value) {
                                     setState(() {
-                                      selectedMunicipio = value;
+                                      _selectedMunicipio.value = value ?? '';
+                                      fieldStates['municipality'] = value != null && value.isNotEmpty;
                                     });
                                   },
                                 ),
@@ -671,35 +677,7 @@ class _ViewsFormState extends State<ViewsForm> {
                             child: TextFormField(
                               controller: locationController,
                               style: const TextStyle(fontSize: 12),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(25),
-                                  borderSide: const BorderSide(
-                                    color: Color.fromARGB(255, 76, 244, 54),
-                                    width: 2,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                              ),
+                              decoration: _getInputDecoration('location'),
                             ),
                           ),
                         ],
@@ -824,11 +802,15 @@ class _ViewsFormState extends State<ViewsForm> {
 
                             return Container(
                               height: 35,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(25),
-                                border: Border.all(color: Colors.red, width: 2),
+                                border: Border.all(
+                                  color: fieldStates['serviceType'] == true 
+                                      ? const Color.fromARGB(255, 76, 244, 54)
+                                      : Colors.red,
+                                  width: 2,
+                                ),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
@@ -857,6 +839,7 @@ class _ViewsFormState extends State<ViewsForm> {
                                       : (String? newValue) {
                                           setState(() {
                                             selectedServiceType = newValue;
+                                            fieldStates['serviceType'] = newValue != null;
                                             print('Tipo de servicio seleccionado: $newValue');
                                           });
                                         },
@@ -884,32 +867,7 @@ class _ViewsFormState extends State<ViewsForm> {
                             controller: needDescriptionController,
                             style: const TextStyle(fontSize: 12),
                             maxLines: 4,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: Colors.white,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: const BorderSide(
-                                  color: Colors.red,
-                                  width: 2,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: const BorderSide(
-                                  color: Colors.red,
-                                  width: 2,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(25),
-                                borderSide: const BorderSide(
-                                  color: Color.fromARGB(255, 76, 244, 54),
-                                  width: 2,
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.all(16),
-                            ),
+                            decoration: _getInputDecoration('needDescription'),
                           ),
                         ],
                       ),
@@ -941,13 +899,15 @@ class _ViewsFormState extends State<ViewsForm> {
 
                             return Container(
                               height: 35,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(25),
-                                border: Border.all(color: Colors.red, width: 2),
+                                border: Border.all(
+                                  color: fieldStates['eventType'] == true 
+                                      ? const Color.fromARGB(255, 76, 244, 54)
+                                      : Colors.red,
+                                  width: 2,
+                                ),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
@@ -976,6 +936,7 @@ class _ViewsFormState extends State<ViewsForm> {
                                   onChanged: (String? newValue) {
                                     setState(() {
                                       selectedEventType = newValue;
+                                      fieldStates['eventType'] = newValue != null;
                                     });
                                   },
                                 ),
@@ -1031,9 +992,9 @@ class _ViewsFormState extends State<ViewsForm> {
       'nameClient': nameController.text.trim(),
       'emailClient': emailController.text.trim(),
       'telephoneClient': telephoneController.text.trim(),
-      'eventDate': selectedDate!.toIso8601String(),
+      'eventDate': _selectedDate.value!.toIso8601String(),
       'location': locationController.text.trim(),
-      'municipality': selectedMunicipio!,
+      'municipality': _selectedMunicipio.value,
       'observations': observationsController.text.trim(),
       'needDescription': needDescriptionController.text.trim(),
       'eventType': selectedEventType!,
@@ -1049,9 +1010,9 @@ class _ViewsFormState extends State<ViewsForm> {
         nameController.text.isEmpty ||
         emailController.text.isEmpty ||
         telephoneController.text.isEmpty ||
-        selectedDate == null ||
+        _selectedDate.value == null ||
         locationController.text.isEmpty ||
-        selectedMunicipio == null ||
+        _selectedMunicipio.value.isEmpty ||
         selectedServiceId == null ||
         selectedServiceType == null ||
         selectedEventType == null) {
