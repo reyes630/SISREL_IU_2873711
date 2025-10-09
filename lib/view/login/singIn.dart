@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/reactController.dart';
 import '../../services/authService.dart';
 import '../interface/inicio.dart';
+import 'forgotPassword.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -214,11 +215,20 @@ class _LoginViewState extends State<LoginView> {
                             ),
                           ),
                           const SizedBox(height: 15),
-                          const Text(
-                            "¿Olvidó su contraseña?",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ForgotPasswordView()),
+                              );
+                            },
+                            child: const Text(
+                              "¿Olvidó su contraseña?",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                              ),
                             ),
                           ),
                         ],

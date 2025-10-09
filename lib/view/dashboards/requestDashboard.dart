@@ -36,47 +36,68 @@ class _RequestDashboardState extends State<RequestDashboard> {
     loadStateData();
   }
 
-  Future<void> loadServicesData() async {
-    try {
-      setState(() => isLoading = true);
-      final data = await fetchServicesStatistics();
-      setState(() {
-        servicesData = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error cargando estadísticas: $e');
-      setState(() => isLoading = false);
-    }
+Future<void> loadServicesData() async {
+  if (!mounted) return;
+  setState(() => isLoading = true);
+  
+  try {
+    // Espera mínima de 3 segundos
+    await Future.delayed(const Duration(seconds: 3));
+    final data = await fetchServicesStatistics();
+    
+    if (!mounted) return;
+    setState(() {
+      servicesData = data;
+      isLoading = false;
+    });
+  } catch (e) {
+    print('Error cargando estadísticas: $e');
+    if (!mounted) return;
+    setState(() => isLoading = false);
   }
+}
 
-  Future<void> loadMunicipalityData() async {
-    try {
-      setState(() => isLoading = true);
-      final data = await fetchMunicipalityStatistics();
-      setState(() {
-        municipalityData = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error cargando estadísticas de municipios: $e');
-      setState(() => isLoading = false);
-    }
+Future<void> loadMunicipalityData() async {
+  if (!mounted) return;
+  setState(() => isLoading = true);
+  
+  try {
+    // Espera mínima de 3 segundos
+    await Future.delayed(const Duration(seconds: 3));
+    final data = await fetchMunicipalityStatistics();
+    
+    if (!mounted) return;
+    setState(() {
+      municipalityData = data;
+      isLoading = false;
+    });
+  } catch (e) {
+    print('Error cargando estadísticas de municipios: $e');
+    if (!mounted) return;
+    setState(() => isLoading = false);
   }
+}
 
-  Future<void> loadStateData() async {
-    try {
-      setState(() => isLoading = true);
-      final data = await fetchStateStatistics();
-      setState(() {
-        stateData = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error cargando estadísticas de estados: $e');
-      setState(() => isLoading = false);
-    }
+Future<void> loadStateData() async {
+  if (!mounted) return;
+  setState(() => isLoading = true);
+  
+  try {
+    // Espera mínima de 3 segundos
+    await Future.delayed(const Duration(seconds: 3));
+    final data = await fetchStateStatistics();
+    
+    if (!mounted) return;
+    setState(() {
+      stateData = data;
+      isLoading = false;
+    });
+  } catch (e) {
+    print('Error cargando estadísticas de estados: $e');
+    if (!mounted) return;
+    setState(() => isLoading = false);
   }
+}
 
   Color parseApiColor(String colorHex) {
     try {

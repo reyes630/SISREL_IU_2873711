@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:app_adso_711_1/controllers/reactController.dart';
 import 'package:flutter/material.dart';
@@ -10,18 +11,23 @@ import '../view/request/viewRequests.dart';
 const baseUrl = "https://adso711-sisrel-94jo.onrender.com";
 const baseUrl2 = "https://api-colombia.com/api/v1/Department/8/cities";
 
+final httpClient = http.Client();
+const Duration apiTimeout = Duration(seconds: 60);
+
 Future fetchUsers() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/users/'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -43,19 +49,20 @@ Future fetchRequest() async {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/request'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       final List allRequests = jsonResponse['data'];
       
-      // Filter non-archived requests (archive_status = 0 or null)
       final activeRequests = allRequests.where((request) => 
         request['archive_status'] == 0 || request['archive_status'] == null
       ).toList();
@@ -77,13 +84,15 @@ Future fetchClients() async {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/clients/'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -100,21 +109,19 @@ Future fetchClients() async {
   }
 }
 
-// ---------------------------------------- MUNICIPIOS ----------------------------------------
-
 Future fetchMunicipalities() async {
   try {
     final ReactController controller = Get.find<ReactController>();
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse(baseUrl2),
       headers: {'Content-Type': 'application/json'},
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonResponse = jsonDecode(response.body);
-
-      // Guarda la lista completa de municipios en el controlador
       controller.setListMunicipalities(jsonResponse);
     } else {
       throw Exception('Error al traer los municipios: ${response.statusCode}');
@@ -124,20 +131,20 @@ Future fetchMunicipalities() async {
   }
 }
 
-// ---------------------------------------- TIPO DE SERVICIOS ----------------------------------------
-
 Future fetchServiceTypes() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/serviceTypes/'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -154,20 +161,20 @@ Future fetchServiceTypes() async {
   }
 }
 
-// ---------------------------------------- TIPO DE EVENTOS ----------------------------------------
-
 Future fetchEventTypes() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/eventTypes/'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -184,15 +191,12 @@ Future fetchEventTypes() async {
   }
 }
 
-// ---------------------------------------- FORMULARIO DE SOLICITUD ---------------------------------------
-
 Future<void> createRequestWithClient(Map<String, dynamic> formData) async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    // 1. Crear cliente
-    final clientResponse = await http.post(
+    final clientResponse = await httpClient.post(
       Uri.parse('$baseUrl/api/v1/client/'),
       headers: {
         'Content-Type': 'application/json',
@@ -204,7 +208,9 @@ Future<void> createRequestWithClient(Map<String, dynamic> formData) async {
         'EmailClient': formData['emailClient'],
         'TelephoneClient': formData['telephoneClient'],
       }),
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (clientResponse.statusCode != 201 && clientResponse.statusCode != 200) {
       throw Exception('Error al crear el cliente');
@@ -213,12 +219,8 @@ Future<void> createRequestWithClient(Map<String, dynamic> formData) async {
     final clientData = jsonDecode(clientResponse.body);
     final clientId = clientData['data']['id'];
 
-    // 2. Formatear fecha
-    final formattedDate = DateFormat(
-      'yyyy-MM-dd',
-    ).format(DateTime.parse(formData['eventDate']));
+    final formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.parse(formData['eventDate']));
 
-    // 3. Crear solicitud
     final requestData = {
       'eventDate': formattedDate,
       'location': formData['location'] ?? '',
@@ -236,18 +238,18 @@ Future<void> createRequestWithClient(Map<String, dynamic> formData) async {
       'archive_status': 0,
     };
 
-    final requestResponse = await http.post(
+    final requestResponse = await httpClient.post(
       Uri.parse('$baseUrl/api/v1/request/'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
       body: jsonEncode(requestData),
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
-    if (requestResponse.statusCode == 201 ||
-        requestResponse.statusCode == 200) {
-      // Cambiar a la pestaña de ViewRequests (índice 1)
+    if (requestResponse.statusCode == 201 || requestResponse.statusCode == 200) {
       controller.changeToTab(1);
 
       Get.snackbar(
@@ -272,23 +274,22 @@ Future<void> createRequestWithClient(Map<String, dynamic> formData) async {
   }
 }
 
-// ---------------------------------------- ELIMINAR SOLICITUD ----------------------------------------
-
 Future<bool> deleteRequest(int requestId) async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.delete(
+    final response = await httpClient.delete(
       Uri.parse('$baseUrl/api/v1/request/$requestId'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200 || response.statusCode == 204) {
-      // Refrescar la lista de solicitudes
       await fetchRequest();
       return true;
     } else if (response.statusCode == 401) {
@@ -302,21 +303,20 @@ Future<bool> deleteRequest(int requestId) async {
   }
 }
 
-// ---------------------------------------- VER SOLICITUD POR ID ----------------------------------------
-
 Future<Map<String, dynamic>> fetchRequestById(int requestId) async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    // Agregar parámetros de populate para traer las relaciones
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('$baseUrl/api/v1/request/$requestId?populate=clients,users,states,servicetypes,eventtypes,services'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -333,25 +333,23 @@ Future<Map<String, dynamic>> fetchRequestById(int requestId) async {
   }
 }
 
-
-// ACTUALIZAR SOLICITUD
-
 Future<void> updateRequest(int requestId, Map<String, dynamic> updateData) async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.put(
+    final response = await httpClient.put(
       Uri.parse('$baseUrl/api/v1/request/$requestId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(updateData),
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
-      // Actualizar la lista de solicitudes después de la actualización
       await fetchRequest();
     } else if (response.statusCode == 401) {
       controller.logout();
@@ -364,31 +362,29 @@ Future<void> updateRequest(int requestId, Map<String, dynamic> updateData) async
   }
 }
 
-// SOLICITUDES ARCHIVADAS
-
 Future<void> fetchArchivedRequests() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/request'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List allRequests = jsonResponse['data'];
       
-      // Filter archived requests (archive_status = 1)
       final archivedRequests = allRequests.where((request) => 
         request['archive_status'] == 1
       ).toList();
       
-      // Set archived requests in controller
       controller.setArchivedRequests(archivedRequests);
     } else if (response.statusCode == 401) {
       controller.logout();
@@ -402,20 +398,20 @@ Future<void> fetchArchivedRequests() async {
   }
 }
 
-
-// ---------------------------------------- SERVICIOS ---------------------------------------
 Future fetchServices() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/services/'),
       headers: {
         'Content-Type': 'application/json',
         if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -432,24 +428,23 @@ Future fetchServices() async {
   }
 }
 
-// ---------------------------------------- ESTADOS ---------------------------------------
-
 Future fetchStates() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/states'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
-      // Extract the data array from the response
       final List<dynamic> statesData = jsonResponse['data'] as List<dynamic>;
       controller.setStates(statesData);
     } else {
@@ -461,26 +456,25 @@ Future fetchStates() async {
   }
 }
 
-// ---------------------------------------- USUARIOS ASIGNADOS ---------------------------------------
-
 Future<void> fetchAssignableUsers() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('${baseUrl}/api/v1/users'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = json.decode(response.body);
       final List allUsers = jsonResponse['data'];
       
-      // Filter users with roles 5 or 6
       final assignableUsers = allUsers.where((user) => 
         user['FKroles'] == 5 || user['FKroles'] == 6
       ).toList();
@@ -494,7 +488,6 @@ Future<void> fetchAssignableUsers() async {
   }
 }
 
-// ---------------------------------------- EDITAR USUARIO ---------------------------------------
 Future<void> updateUserProfile(Map<String, dynamic> updateData) async {
   try {
     final ReactController controller = Get.find<ReactController>();
@@ -505,7 +498,6 @@ Future<void> updateUserProfile(Map<String, dynamic> updateData) async {
       throw Exception('No se encontró el usuario actual');
     }
 
-    // Datos que coinciden con la estructura de la base de datos
     final userData = {
       'documentUser': updateData['documentUser'],
       'nameUser': updateData['nameUser'],
@@ -513,19 +505,19 @@ Future<void> updateUserProfile(Map<String, dynamic> updateData) async {
       'telephoneUser': updateData['telephoneUser'],
       'FKroles': currentUser['FKroles'],
       'coordinator': currentUser['coordinator'],
-      'passwordUser': currentUser['passwordUser'], // Mantener la contraseña actual
+      'passwordUser': currentUser['passwordUser'],
     };
 
-
-    final response = await http.put(
+    final response = await httpClient.put(
       Uri.parse('$baseUrl/api/v1/users/${currentUser['id']}'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(userData),
-    );
-
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
@@ -539,25 +531,25 @@ Future<void> updateUserProfile(Map<String, dynamic> updateData) async {
   }
 }
 
-// ---------------------------------------- GRAFICA ---------------------------------------
 Future<Map<String, dynamic>> fetchServicesStatistics() async {
   try {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('$baseUrl/api/v1/request'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       final List requests = jsonResponse['data'];
       
-      // Agrupar solicitudes por servicio
       Map<String, int> serviceCount = {};
       Map<String, String> serviceColors = {};
 
@@ -586,19 +578,20 @@ Future<Map<String, dynamic>> fetchMunicipalityStatistics() async {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('$baseUrl/api/v1/request'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       final List requests = jsonResponse['data'];
       
-      // Agrupar solicitudes por municipio
       Map<String, int> municipalityCount = {};
 
       for (var request in requests) {
@@ -606,7 +599,6 @@ Future<Map<String, dynamic>> fetchMunicipalityStatistics() async {
         municipalityCount[municipality] = (municipalityCount[municipality] ?? 0) + 1;
       }
 
-      // Ordenar municipios por cantidad de solicitudes
       var sortedEntries = municipalityCount.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -626,19 +618,20 @@ Future<Map<String, dynamic>> fetchStateStatistics() async {
     final ReactController controller = Get.find<ReactController>();
     final token = controller.getAuthToken;
 
-    final response = await http.get(
+    final response = await httpClient.get(
       Uri.parse('$baseUrl/api/v1/request'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-    );
+    ).timeout(apiTimeout, onTimeout: () {
+      throw TimeoutException('El servidor tardó demasiado en responder');
+    });
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
       final List requests = jsonResponse['data'];
       
-      // Agrupar solicitudes por estado
       Map<String, int> stateCount = {};
       Map<String, String> stateColors = {};
 
@@ -659,5 +652,123 @@ Future<Map<String, dynamic>> fetchStateStatistics() async {
     }
   } catch (e) {
     throw Exception('Error: ${e.toString()}');
+  }
+}
+
+// 🔐 RECUPERAR CONTRASEÑA
+Future<Map<String, dynamic>> forgotPassword(String email) async {
+  try {
+    print('Enviando solicitud de recuperación a: $email');
+
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/api/v1/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    ).timeout(
+      const Duration(seconds: 60),
+      onTimeout: () {
+        throw TimeoutException('El servidor tardó demasiado en responder');
+      },
+    );
+
+    print('Status code: ${response.statusCode}');
+    print('Respuesta del servidor: ${response.body}');
+
+    final responseData = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return {
+        'success': true,
+        'message': responseData['message'] ?? 'Se ha enviado un correo con las instrucciones'
+      };
+    } else if (response.statusCode == 404) {
+      throw Exception('No se encontró una cuenta con ese correo');
+    } else {
+      throw Exception(responseData['message'] ?? 'Error al procesar la solicitud');
+    }
+  } on TimeoutException catch (e) {
+    print('Error de timeout en forgotPassword: $e');
+    throw Exception('El servidor tardó demasiado en responder. Intenta nuevamente.');
+  } catch (e) {
+    print('Error en forgotPassword: $e');
+    throw Exception('Error al procesar la solicitud: ${e.toString()}');
+  }
+}
+
+
+Future<Map<String, dynamic>> verifyResetCode(String code) async {
+  try {
+    print('Verificando código: $code');
+
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/api/v1/auth/verify-reset-code'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'code': code}),
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw TimeoutException('El servidor tardó demasiado en responder');
+      },
+    );
+
+    print('Respuesta verificación: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': true,
+        'email': responseData['email'],
+      };
+    } else if (response.statusCode == 400) {
+      final responseData = jsonDecode(response.body);
+      throw Exception(responseData['message'] ?? 'Código inválido o expirado');
+    } else {
+      throw Exception('Error al verificar el código');
+    }
+  } on TimeoutException catch (e) {
+    print('Error de timeout en verifyResetCode: $e');
+    throw Exception('Timeout al verificar el código');
+  } catch (e) {
+    print('Error en verifyResetCode: $e');
+    throw Exception(e.toString());
+  }
+}
+
+// 🔐 RESTABLECER CONTRASEÑA
+Future<bool> resetPassword(String token, String newPassword) async {
+  try {
+    print('Reseteando contraseña con token: $token');
+
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/api/v1/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'token': token,
+        'newPassword': newPassword,
+      }),
+    ).timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        throw TimeoutException('El servidor tardó demasiado en responder');
+      },
+    );
+
+    print('Respuesta reset password: ${response.statusCode}');
+    print('Body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return true;
+    } else if (response.statusCode == 400) {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message'] ?? 'Error al restablecer la contraseña');
+    } else {
+      throw Exception('Error del servidor');
+    }
+  } on TimeoutException catch (e) {
+    print('Error de timeout en resetPassword: $e');
+    throw Exception('Timeout al restablecer la contraseña');
+  } catch (e) {
+    print('Error en resetPassword: $e');
+    throw Exception(e.toString());
   }
 }
