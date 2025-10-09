@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../api/apiSisrel.dart';
+import '../management/servicesManagement.dart';
+import '../management/statesManagement.dart';
+import '../management/usersManagement.dart';
+
 class DashboardAdmin extends StatefulWidget {
   const DashboardAdmin({super.key});
 
@@ -8,6 +13,42 @@ class DashboardAdmin extends StatefulWidget {
 }
 
 class _DashboardAdminState extends State<DashboardAdmin> {
+  int resolvedThisMonth = 0;
+  int newUsersThisMonth = 0;
+  int newRequestsThisMonth = 0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadStatistics();
+  }
+
+  Future<void> loadStatistics() async {
+    try {
+      setState(() => isLoading = true);
+      
+      // Cargar todas las estadísticas
+      final resolved = await fetchResolvedRequestsCurrentMonth();
+      final newUsers = await fetchNewUsersCurrentMonth();
+      final newRequests = await fetchNewRequestsCurrentMonth();
+      
+      if (mounted) {
+        setState(() {
+          resolvedThisMonth = resolved;
+          newUsersThisMonth = newUsers;
+          newRequestsThisMonth = newRequests;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading statistics: $e');
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,7 +104,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       children: [
                         _buildManagementCard(
-                          title: ' USUARIOS',
+                          title: 'USUARIOS', // Eliminamos el espacio extra
                           color: const Color(0xFFFFFFFF),
                           icon: Icons.group_outlined,
                         ),
@@ -107,46 +148,51 @@ class _DashboardAdminState extends State<DashboardAdmin> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Color(0xFF04324d),
+                color: const Color(0xFF04324d),
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color: Colors.black12,
                     blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Icon( 
+                children: [
+                  const Icon( 
                     Icons.check_circle_outline,
                     size: 80,
                     color: Color(0xFFF7F7F7),
                   ),
-                  Divider(
+                  const Divider(
                     color: Colors.grey,
                     height: 20,
                     thickness: 1,
                   ),
-                  Text(
-                    'Resueltos Ultimo Mes',
+                  const Text(
+                    'Solicitudes resueltas',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    '10',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white54,
-                    ),
-                  ),
+                  const SizedBox(height: 8),
+                  isLoading
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      )
+                    : Text(
+                        resolvedThisMonth.toString(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white54,
+                        ),
+                      ),
                 ],
               ),
             ),
@@ -186,16 +232,16 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Nuevas Registros Ultimo Mes',
+                          'Nuevos registros de usuarios',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          '25',
-                          style: TextStyle(
+                        Text(
+                          isLoading ? '...' : newUsersThisMonth.toString(),
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
@@ -235,16 +281,16 @@ class _DashboardAdminState extends State<DashboardAdmin> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Solicitudes Ultimo Mes',
+                          'Solicitudes actuales',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          '15',
-                          style: TextStyle(
+                        Text(
+                          isLoading ? '...' : newRequestsThisMonth.toString(),
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
@@ -267,67 +313,97 @@ class _DashboardAdminState extends State<DashboardAdmin> {
   Widget _buildManagementCard({
     required String title,
     required Color color,
-    IconData icon = Icons.manage_accounts, 
+    IconData icon = Icons.manage_accounts,
   }) {
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Círculo con ícono
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: Color(0xFF39A900),
-              shape: BoxShape.circle,
+    return InkWell(
+      onTap: () {
+        switch (title.trim()) { // Agregamos trim() para eliminar espacios
+          case 'USUARIOS':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const UsersManagementView(),
+              ),
+            );
+            break;
+          case 'SERVICIOS':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ServicesManagementView(),
+              ),
+            );
+            break;
+          case 'ESTADOS':
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StatesManagementView(),
+              ),
+            );
+            break;
+        }
+      },
+      child: Container(
+        width: 220,
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(
-              icon,
-              size: 28,
-              color: Colors.white,
+          ],
+        ),
+        child: Row(
+          children: [
+            // Círculo con ícono
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: Color(0xFF39A900),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 28,
+                color: Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          // Textos
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Gestión de',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54,
+            const SizedBox(width: 16),
+            // Textos
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Gestión de',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

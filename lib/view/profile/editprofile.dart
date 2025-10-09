@@ -6,10 +6,7 @@ import '../../api/apiSisrel.dart';
 class EditProfileModal extends StatefulWidget {
   final Map<String, dynamic> userData;
 
-  const EditProfileModal({
-    Key? key,
-    required this.userData,
-  }) : super(key: key);
+  const EditProfileModal({Key? key, required this.userData}) : super(key: key);
 
   @override
   State<EditProfileModal> createState() => _EditProfileModalState();
@@ -18,7 +15,7 @@ class EditProfileModal extends StatefulWidget {
 class _EditProfileModalState extends State<EditProfileModal> {
   final ReactController controller = Get.find<ReactController>();
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
@@ -30,9 +27,15 @@ class _EditProfileModalState extends State<EditProfileModal> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.userData['nameUser']);
-    _emailController = TextEditingController(text: widget.userData['emailUser']);
-    _phoneController = TextEditingController(text: widget.userData['telephoneUser']);
-    _documentController = TextEditingController(text: widget.userData['documentUser']);
+    _emailController = TextEditingController(
+      text: widget.userData['emailUser'],
+    );
+    _phoneController = TextEditingController(
+      text: widget.userData['telephoneUser'],
+    );
+    _documentController = TextEditingController(
+      text: widget.userData['documentUser'],
+    );
     _passwordController = TextEditingController();
   }
 
@@ -57,9 +60,13 @@ class _EditProfileModalState extends State<EditProfileModal> {
         'emailUser': _emailController.text,
         'telephoneUser': _phoneController.text,
         'documentUser': _documentController.text,
-        'passwordUser': _passwordController.text.isEmpty ? 
-            widget.userData['passwordUser'] : _passwordController.text,
       };
+
+      // Solo incluir la contraseña si se ingresó una nueva
+      if (_passwordController.text.isNotEmpty) {
+        updateData['passwordUser'] = _passwordController.text;
+        print('Nueva contraseña incluida en la actualización'); // Debug log
+      }
 
       await updateUserProfile(updateData);
 
@@ -122,7 +129,10 @@ class _EditProfileModalState extends State<EditProfileModal> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Color(0xFF4CAF50), width: 3),
+                          border: Border.all(
+                            color: Color(0xFF4CAF50),
+                            width: 3,
+                          ),
                         ),
                         child: const Icon(
                           Icons.person,
@@ -150,7 +160,7 @@ class _EditProfileModalState extends State<EditProfileModal> {
                     ],
                   ),
                 ),
-                
+
                 // Formulario
                 Padding(
                   padding: const EdgeInsets.all(20),
@@ -162,23 +172,27 @@ class _EditProfileModalState extends State<EditProfileModal> {
                       TextFormField(
                         controller: _nameController,
                         decoration: _buildInputDecoration(Icons.person_outline),
-                        validator: (value) => value?.isEmpty ?? true ? 'Por favor ingrese su nombre' : null,
+                        validator: (value) => value?.isEmpty ?? true
+                            ? 'Por favor ingrese su nombre'
+                            : null,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Email
                       _buildFieldLabel('Correo electrónico'),
                       TextFormField(
                         controller: _emailController,
                         decoration: _buildInputDecoration(Icons.email_outlined),
                         validator: (value) {
-                          if (value?.isEmpty ?? true) return 'Por favor ingrese su correo';
-                          if (!value!.contains('@')) return 'Por favor ingrese un correo válido';
+                          if (value?.isEmpty ?? true)
+                            return 'Por favor ingrese su correo';
+                          if (!value!.contains('@'))
+                            return 'Por favor ingrese un correo válido';
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Documento y Teléfono en fila
                       Row(
                         children: [
@@ -189,8 +203,12 @@ class _EditProfileModalState extends State<EditProfileModal> {
                                 _buildFieldLabel('Documento'),
                                 TextFormField(
                                   controller: _documentController,
-                                  decoration: _buildInputDecoration(Icons.badge_outlined),
-                                  validator: (value) => value?.isEmpty ?? true ? 'Requerido' : null,
+                                  decoration: _buildInputDecoration(
+                                    Icons.badge_outlined,
+                                  ),
+                                  validator: (value) => value?.isEmpty ?? true
+                                      ? 'Requerido'
+                                      : null,
                                 ),
                               ],
                             ),
@@ -203,10 +221,14 @@ class _EditProfileModalState extends State<EditProfileModal> {
                                 _buildFieldLabel('Teléfono'),
                                 TextFormField(
                                   controller: _phoneController,
-                                  decoration: _buildInputDecoration(Icons.phone_outlined),
+                                  decoration: _buildInputDecoration(
+                                    Icons.phone_outlined,
+                                  ),
                                   validator: (value) {
-                                    if (value?.isEmpty ?? true) return 'Requerido';
-                                    if (value!.length != 10) return 'Debe tener 10 dígitos';
+                                    if (value?.isEmpty ?? true)
+                                      return 'Requerido';
+                                    if (value!.length != 10)
+                                      return 'Debe tener 10 dígitos';
                                     return null;
                                   },
                                 ),
@@ -216,19 +238,23 @@ class _EditProfileModalState extends State<EditProfileModal> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Contraseña
                       _buildFieldLabel('Nueva Contraseña'),
                       TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        decoration: _buildInputDecoration(Icons.lock_outline).copyWith(
-                          helperText: 'Dejar vacío para mantener la actual',
-                          helperStyle: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                        ),
+                        decoration: _buildInputDecoration(Icons.lock_outline)
+                            .copyWith(
+                              helperText: 'Dejar vacío para mantener la actual',
+                              helperStyle: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Botones
                       Row(
                         children: [
@@ -238,14 +264,19 @@ class _EditProfileModalState extends State<EditProfileModal> {
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.grey[700],
                                 side: BorderSide(color: Colors.grey[400]!),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                               child: const Text(
                                 'Cancelar',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
@@ -256,7 +287,9 @@ class _EditProfileModalState extends State<EditProfileModal> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0D47A1),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -268,17 +301,24 @@ class _EditProfileModalState extends State<EditProfileModal> {
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
                                     )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: const [
                                         Icon(Icons.edit, size: 18),
                                         SizedBox(width: 6),
                                         Text(
                                           'Modificar',
-                                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ],
                                     ),

@@ -1,3 +1,4 @@
+import 'package:app_adso_711_1/view/dashboards/dashboard.dart';
 import 'package:app_adso_711_1/view/dashboards/requestDashboard.dart';
 import 'package:app_adso_711_1/view/profile/profile.dart';
 import 'package:app_adso_711_1/view/requestForm/form_page_1.dart';
@@ -9,13 +10,19 @@ import 'package:get/get.dart';
 import '../../controllers/reactController.dart';
 import '../../main.dart';
 //import '../Dashboards/dashboardAdmin.dart';
+import '../dashboards/dashboardAdmin.dart';
 import '../login/singIn.dart';
 
 import '../request/viewRequests.dart';
 //import 'HomePrincipal.dart';
 
 class Inicio extends StatefulWidget {
-  const Inicio({super.key});
+  final int initialRole;
+  
+  const Inicio({
+    Key? key,
+    required this.initialRole,
+  }) : super(key: key);
 
   @override
   State<Inicio> createState() => _InicioState();
@@ -46,6 +53,22 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Widget _getHomePageByRole(int role) {
+    print('Rol recibido en Inicio: $role'); // Log detallado
+    
+    switch (role) {
+      case 1:
+        return const Dashboard();
+      case 4:
+        return const DashboardAdmin();
+      case 5:
+      case 6:
+        return const RequestDashboard();
+      default:
+        return const Dashboard();
+    }
   }
 
   @override
@@ -153,11 +176,11 @@ class _InicioState extends State<Inicio> with SingleTickerProviderStateMixin {
 
         body: TabBarView(
           controller: _tabController,
-          children: const [
-            RequestDashboard(), // Vista de inicio (ESTA DEPENDERA DEL ROL)
-            ViewRequests(), // vista de las solicitudes
-            ViewsForm(),     // Vista del formulario
-            ViewProfile()      //Vista de perfil     
+          children: [
+            _getHomePageByRole(widget.initialRole), // Dynamic home page
+            const ViewRequests(),
+            const ViewsForm(),
+            const ViewProfile()
           ],
         ),
 

@@ -36,55 +36,48 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  Future<void> _handleLogin() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
+Future<void> _handleLogin() async {
+  final email = _emailController.text.trim();
+  final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      _showSnackBar('Por favor complete todos los campos', isError: true);
-      return;
-    }
+  setState(() {
+    _isLoading = true;
+  });
 
-    if (!AuthService.isValidEmail(email)) {
-      _showSnackBar('Por favor ingrese un correo válido', isError: true);
-      return;
-    }
+  try {
+    final result = await AuthService.login(email, password);
 
-    if (!AuthService.isValidPassword(password)) {
-      _showSnackBar('La contraseña debe tener al menos 5 caracteres', isError: true);
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final result = await AuthService.login(email, password);
-
+    if (result['success']) {
+      // Accedemos correctamente a los datos del usuario
+      final userData = result['data']['user'];
+      controller.saveLoginData(result['data']);
+      
+      // Obtenemos el rol del objeto user
+      final userRole = userData['FKroles'] as int;
+      
       if (!mounted) return;
-
-      if (result['success']) {
-        controller.saveLoginData(result['data']);
-        _showSnackBar('¡Bienvenido!');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Inicio()),
-        );
-      } else {
-        _showSnackBar(result['message'] ?? 'Error al iniciar sesión', isError: true);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      _showSnackBar('Error inesperado: ${e.toString()}', isError: true);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      
+      _showSnackBar('¡Bienvenido!');
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Inicio(initialRole: userRole),
+        ),
+      );
+    } else {
+      _showSnackBar(result['message'] ?? 'Error al iniciar sesión', isError: true);
+    }
+  } catch (e) {
+    _showSnackBar('Error inesperado: ${e.toString()}', isError: true);
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

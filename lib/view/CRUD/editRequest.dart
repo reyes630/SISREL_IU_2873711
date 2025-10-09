@@ -799,59 +799,71 @@ class _RequestFormModalState extends State<RequestFormModal> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Obx(() {
-                          final users = controller.getAssignableUsers;
-                          final currentAssignment = requestData?['assignment']?.toString();
+                      Obx(() {
+                        final currentUser = controller.getCurrentUser;
+                        final userRole = currentUser?['FKroles'];
+                        
+                        // Si es instructor (5) o funcionario (6), mostrar solo el nombre
+                        if (userRole == 5 || userRole == 6) {
+                          return Text(
+                            currentUser?['nameUser'] ?? 'No especificado',
+                            style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          );
+                        }
+                        
+                        // Para otros roles (admin), mostrar el dropdown
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Obx(() {
+                            final users = controller.getAssignableUsers;
+                            final currentAssignment = requestData?['assignment']?.toString();
 
-                          if (users.isEmpty) {
-                            return const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text('Cargando usuarios...'),
+                            if (users.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text('Cargando usuarios...'),
+                              );
+                            }
+
+                            final assignmentExists = users.any(
+                              (user) => user['id'].toString() == currentAssignment
                             );
-                          }
 
-                          // Verificar si el usuario asignado actual existe en la lista
-                          final assignmentExists = users.any(
-                            (user) => user['id'].toString() == currentAssignment
-                          );
-
-                          return DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: assignmentExists ? currentAssignment : null,
-                              isExpanded: true,
-                              hint: const Text('Seleccionar responsable'),
-                              items: users.map<DropdownMenuItem<String>>((user) {
-                                // Determine role text
-                                String roleText = user['FKroles'] == 5 ? 'Instructor' : 
-                                                 user['FKroles'] == 6 ? 'Funcionario' : 
-                                                 'Rol desconocido';
-                                  
-                                return DropdownMenuItem<String>(
-                                  value: user['id'].toString(),
-                                  child: Text(
-                                    '${user['nameUser'] ?? 'Usuario sin nombre'} ($roleText)',
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  setState(() {
-                                    requestData?['assignment'] = newValue;
-                                  });
-                                }
-                              },
-                            ),
-                          );
-                        }),
-                      ),
+                            return DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: assignmentExists ? currentAssignment : null,
+                                isExpanded: true,
+                                hint: const Text('Seleccionar responsable'),
+                                items: users.map<DropdownMenuItem<String>>((user) {
+                                  String roleText = user['FKroles'] == 5 ? 'Instructor' : 
+                                                  user['FKroles'] == 6 ? 'Funcionario' : 
+                                                  'Rol desconocido';
+                                    
+                                  return DropdownMenuItem<String>(
+                                    value: user['id'].toString(),
+                                    child: Text(
+                                      '${user['nameUser'] ?? 'Usuario sin nombre'} ($roleText)',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    setState(() {
+                                      requestData?['assignment'] = newValue;
+                                    });
+                                  }
+                                },
+                              ),
+                            );
+                          }),
+                        );
+                      }),
                       const SizedBox(height: 20),
 
                       const Text(

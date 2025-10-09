@@ -6,6 +6,7 @@ import '../../api/apiSisrel.dart';
 import '../../controllers/reactController.dart';
 import '../CRUD/viewRequest.dart';
 import 'archiveRequest.dart';
+import 'sentRequest.dart';
 
 class ViewRequests extends StatefulWidget {
   const ViewRequests({super.key});
@@ -264,6 +265,24 @@ class _ViewRequestsState extends State<ViewRequests> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // Show 'Enviadas' button only if user is not Administrative
+                if (controller.getCurrentUser?['FKroles'] != 1)
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SentRequests(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.send),
+                    label: const Text('Enviadas'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.grey[700],
+                    ),
+                  ),
+                const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () {
                     Navigator.push(
@@ -493,6 +512,11 @@ class _ViewRequestsState extends State<ViewRequests> {
                                               Offset.zero & overlay.size,
                                             );
 
+                                        final currentUser = controller.getCurrentUser;
+                                        final userRole = currentUser?['FKroles'];
+                                        final isAdministrative = userRole == 1;
+                                        final canArchive = (request['FKstates'] == 6 || request['FKstates'] == 7);
+
                                         final result = await showMenu<String>(
                                           context: context,
                                           position: position,
@@ -520,55 +544,58 @@ class _ViewRequestsState extends State<ViewRequests> {
                                                 ],
                                               ),
                                             ),
-                                            const PopupMenuItem(
-                                              value: "edit",
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 0,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.edit,
-                                                    size: 18,
-                                                    color: Colors.blue,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Text(
-                                                    "Editar",
-                                                    style: TextStyle(
-                                                      fontSize: 14,
+                                            // No mostrar opción de editar para Administrativo
+                                            if (!isAdministrative)
+                                              const PopupMenuItem(
+                                                value: "edit",
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 0,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.edit,
+                                                      size: 18,
+                                                      color: Colors.blue,
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: "delete",
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 0,
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.red,
-                                                  ),
-                                                  SizedBox(width: 6),
-                                                  Text(
-                                                    "Eliminar",
-                                                    style: TextStyle(
-                                                      fontSize: 14,
+                                                    SizedBox(width: 6),
+                                                    Text(
+                                                      "Editar",
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                            // Show archive option only for Resuelto (6) or Cerrado (7) states
-                                            if (request['FKstates'] == 6 ||
-                                                request['FKstates'] == 7)
+                                            // No mostrar opción de eliminar para Administrativo
+                                            if (!isAdministrative && userRole != 5 && userRole != 6)
+                                              const PopupMenuItem(
+                                                value: "delete",
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 0,
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.red,
+                                                    ),
+                                                    SizedBox(width: 6),
+                                                    Text(
+                                                      "Eliminar",
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            // Mostrar opción de archivar solo para Administrativo y solo si el estado es Resuelto o Cerrado
+                                            if (isAdministrative && canArchive)
                                               const PopupMenuItem(
                                                 value: "archive",
                                                 padding: EdgeInsets.symmetric(
@@ -745,6 +772,424 @@ class _ViewRequestsState extends State<ViewRequests> {
                   },
                 );
               }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRequestCard(Map<String, dynamic> request, int index) { // Añadir el parámetro index
+    final currentUser = controller.getCurrentUser;
+    final userRole = currentUser?['FKroles'];
+    final bool canDelete = userRole != 5 && userRole != 6;
+
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Círculo indicador de tiempo
+                Center(
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: getStatusColor(request['createdAt']),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Información de la solicitud
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      request['Client']?['NameClient'] ?? 'Cliente no disponible',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      request['createdAt'].isNotEmpty
+                          ? 'Creado: ${request['createdAt'].substring(0, 10)}'
+                          : 'Fecha no disponible',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const Spacer(),
+
+                // Estado y Servicio
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Chip(
+                      label: Text(
+                        request['State']?['State'] ?? 'Sin estado',
+                        style: TextStyle(
+                          color: parseApiColor(
+                            request['State']?['color'],
+                          ),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      backgroundColor: parseApiColor(
+                        request['State']?['color'],
+                      ).withOpacity(0.1),
+                      side: BorderSide(
+                        color: parseApiColor(
+                          request['State']?['color'],
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: -2,
+                      ),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: const VisualDensity(
+                        horizontal: -4,
+                        vertical: -4,
+                      ),
+                    ),
+
+                    const SizedBox(height: 2),
+                    Chip(
+                      label: Text(
+                        request['serviceType']?['service']?['service'] ?? 'Sin servicio',
+                        style: TextStyle(
+                          color: parseApiColor(
+                            request['serviceType']?['service']?['color']
+                                ?.toString(),
+                          ),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      backgroundColor: parseApiColor(
+                        request['serviceType']?['service']?['color']
+                            ?.toString(),
+                      ).withOpacity(0.1),
+                      side: BorderSide(
+                        color: parseApiColor(
+                          request['serviceType']?['service']?['color']
+                              ?.toString(),
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: -2,
+                      ),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: const VisualDensity(
+                        horizontal: -4,
+                        vertical: -4,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Menú de opciones (...)
+                Builder(
+                  builder: (context) {
+                    return IconButton(
+                      icon: const Icon(Icons.more_horiz),
+                      onPressed: () async {
+                        final RenderBox button =
+                            context.findRenderObject() as RenderBox;
+                        final RenderBox overlay =
+                            Overlay.of(
+                                  context,
+                                ).context.findRenderObject()
+                            as RenderBox;
+                        // Posición: justo debajo y alineado a la derecha del botón
+                        final RelativeRect position =
+                            RelativeRect.fromRect(
+                              Rect.fromPoints(
+                                button.localToGlobal(
+                                  button.size.bottomRight(
+                                    Offset.zero,
+                                  ),
+                                  ancestor: overlay,
+                                ),
+                                button.localToGlobal(
+                                  button.size.bottomRight(
+                                    Offset.zero,
+                                  ),
+                                  ancestor: overlay,
+                                ),
+                              ),
+                              Offset.zero & overlay.size,
+                            );
+
+                        final currentUser = controller.getCurrentUser;
+                        final userRole = currentUser?['FKroles'];
+                        final isAdministrative = userRole == 1;
+                        final canArchive = (request['FKstates'] == 6 || request['FKstates'] == 7);
+
+                        final result = await showMenu<String>(
+                          context: context,
+                          position: position,
+                          items: [
+                            const PopupMenuItem(
+                              value: "view",
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 0,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.visibility,
+                                    size: 18,
+                                    color: Colors.black54,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "Ver",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // No mostrar opción de editar para Administrativo
+                            if (!isAdministrative)
+                              const PopupMenuItem(
+                                value: "edit",
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.edit,
+                                      size: 18,
+                                      color: Colors.blue,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      "Editar",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            // No mostrar opción de eliminar para Administrativo
+                            if (!isAdministrative && userRole != 5 && userRole != 6)
+                              const PopupMenuItem(
+                                value: "delete",
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      size: 18,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      "Eliminar",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            // Mostrar opción de archivar solo para Administrativo y solo si el estado es Resuelto o Cerrado
+                            if (isAdministrative && canArchive)
+                              const PopupMenuItem(
+                                value: "archive",
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.archive,
+                                      size: 18,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      "Archivar",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        );
+
+                        // Manejo de acciones
+                        if (result != null) {
+                          final request =
+                              controller.getListRequest[index];
+                          switch (result) {
+                            case "view":
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return ViewRequestFormModal(
+                                    requestId: request['id'], // Usar request en lugar de controller.getListRequest[index]
+                                  );
+                                },
+                            );
+                            break;
+                            case "edit":
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return RequestFormModal(
+                                    requestId: request['id'], // Usar request en lugar de controller.getListRequest[index]
+                                    initialData: request,
+                                  );
+                                },
+                            );
+                            break;
+                            case "delete":
+                              // Mostrar diálogo de confirmación
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text(
+                                      'Confirmar eliminación',
+                                    ),
+                                    content: const Text(
+                                      '¿Estás seguro de que deseas eliminar esta solicitud? Esta acción no se puede deshacer.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(
+                                              context,
+                                            ).pop(false),
+                                        child: const Text(
+                                          'Cancelar',
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(
+                                              context,
+                                            ).pop(true),
+                                        style:
+                                            TextButton.styleFrom(
+                                              foregroundColor:
+                                                  Colors.red,
+                                            ),
+                                        child: const Text(
+                                          'Eliminar',
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
+                              // eliminar
+                              if (confirmed == true) {
+                                try {
+                                  final success =
+                                      await deleteRequest(
+                                        request['id'],
+                                      );
+
+                                  if (success) {
+                                    Get.snackbar(
+                                      'Éxito',
+                                      'Solicitud eliminada correctamente',
+                                      snackPosition:
+                                          SnackPosition.BOTTOM,
+                                      backgroundColor:
+                                          Colors.green,
+                                      colorText: Colors.white,
+                                    );
+                                  }
+                                } catch (e) {
+                                  Get.snackbar(
+                                    'Error',
+                                    'No se pudo eliminar la solicitud: ${e.toString()}',
+                                    snackPosition:
+                                        SnackPosition.BOTTOM,
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                                }
+                              }
+                              break;
+                            case "archive":
+                              try {
+                                // Update request with archive_status = true (1)
+                                Map<String, dynamic>
+                                archiveData = {
+                                  'archive_status': 1,
+                                };
+
+                                await updateRequest(
+                                  request['id'],
+                                  archiveData,
+                                );
+
+                                // Refresh the requests list
+                                await fetchRequest();
+
+                                Get.snackbar(
+                                  'Éxito',
+                                  'Solicitud archivada correctamente',
+                                  snackPosition:
+                                      SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.green,
+                                  colorText: Colors.white,
+                                );
+                              } catch (e) {
+                                Get.snackbar(
+                                  'Error',
+                                  'No se pudo archivar la solicitud: ${e.toString()}',
+                                  snackPosition:
+                                      SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                              }
+                              break;
+                          }
+                        }
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),

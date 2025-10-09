@@ -17,6 +17,8 @@ class ReactController extends GetxController {
   final _listStates = [].obs;
   final _archivedRequests = [].obs;
   final _assignableUsers = [].obs;
+  final _sentRequests = [].obs;
+  final _listRoles = [].obs;
 
   // Agregar TabController
   TabController? _tabController;
@@ -29,7 +31,7 @@ class ReactController extends GetxController {
     _tituloAppBar.value = newTitle;
   }
 
-  void setListUsers(List newUser){
+  void setListUsers(List newUser) {
     _listUsers.value = newUser;
   }
 
@@ -42,28 +44,28 @@ class ReactController extends GetxController {
     _currentUser.value = user;
   }
 
-  void setRequest(List newRequest){
+  void setRequest(List newRequest) {
     _listRequest.value = newRequest;
   }
 
-  void setlistClient(List newClient){
+  void setlistClient(List newClient) {
     _listClient.value = newClient;
   }
 
-  void setListMunicipalities(List newMunicipalities){
+  void setListMunicipalities(List newMunicipalities) {
     _listMunicipalities.value = newMunicipalities;
   }
 
-  void setServiceTypes(List newServiceTypes){
+  void setServiceTypes(List newServiceTypes) {
     _listServiceTypes.value = newServiceTypes;
   }
 
-  void setEventType(List newEeventType){
+  void setEventType(List newEeventType) {
     _listEventType.value = newEeventType;
   }
 
-  void setServices(List newService){
-    _listServices.value = newService;
+  void setServices(List newServices) {
+    _listServices.value = newServices;
   }
 
   // Métodos para TabController
@@ -76,16 +78,26 @@ class ReactController extends GetxController {
   }
 
   void setStates(List newStates) {
-  _listStates.value = newStates;
-}
+    _listStates.value = newStates;
+  }
 
-void setArchivedRequests(List newArchivedRequests) {
-  _archivedRequests.value = newArchivedRequests;
-}
+  List get getStates => _listStates.value;
 
-void setAssignableUsers(List users) {
-  _assignableUsers.value = users;
-}
+  void setArchivedRequests(List newArchivedRequests) {
+    _archivedRequests.value = newArchivedRequests;
+  }
+
+  void setAssignableUsers(List users) {
+    _assignableUsers.value = users;
+  }
+
+  void setSentRequests(List requests) {
+    _sentRequests.value = requests;
+  }
+
+  void setRoles(List newRoles) {
+    _listRoles.value = newRoles;
+  }
 
   void saveLoginData(Map<String, dynamic> loginData) {
     if (loginData['token'] != null) {
@@ -121,4 +133,7 @@ void setAssignableUsers(List users) {
   List get getListStates => _listStates.value;
   List get getArchivedRequests => _archivedRequests.value;
   List get getAssignableUsers => _assignableUsers.value;
+  List get getSentRequests => _sentRequests.value;
+  List get getServices => _listServices.value;
+  List get getListRoles => _listRoles.value;
 }
