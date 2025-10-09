@@ -721,12 +721,14 @@ Future<Map<String, dynamic>> fetchStateStatistics() async {
 // 🔐 RECUPERAR CONTRASEÑA
 Future<Map<String, dynamic>> forgotPassword(String email) async {
   try {
-    print('Enviando solicitud de recuperación a: $email');
-
     final response = await httpClient.post(
       Uri.parse('$baseUrl/api/v1/auth/forgot-password'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email}),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email.trim(), // Asegurar que el email no tenga espacios
+      }),
     ).timeout(
       const Duration(seconds: 60),
       onTimeout: () {
@@ -734,105 +736,98 @@ Future<Map<String, dynamic>> forgotPassword(String email) async {
       },
     );
 
-    print('Status code: ${response.statusCode}');
-    print('Respuesta del servidor: ${response.body}');
+    print('Respuesta del servidor: ${response.body}'); // Para debug
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return {
+        'success': true,
+        'message': responseData['message'] ?? 'Se ha enviado un token a tu correo'
+      };
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message'] ?? 'Error al procesar la solicitud');
+    }
+  } catch (e) {
+    print('Error en forgotPassword: $e'); // Para debug
+    throw Exception('Error al procesar la solicitud: ${e.toString()}');
+  }
+}
+
+// También modificar el método verifyResetCode:
+Future<Map<String, dynamic>> verifyResetCode(String code) async {
+  try {
+    final response = await httpClient.post(
+      Uri.parse('$baseUrl/api/v1/auth/verify-reset-code'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'code': code.trim(), // Asegurar que el código no tenga espacios
+      }),
+    );
+
+    print('Código enviado: ${code.trim()}'); // Para debug
+    print('Respuesta verificación: ${response.body}'); // Para debug
 
     final responseData = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
       return {
         'success': true,
-        'message': responseData['message'] ?? 'Se ha enviado un correo con las instrucciones'
-      };
-    } else if (response.statusCode == 404) {
-      throw Exception('No se encontró una cuenta con ese correo');
-    } else {
-      throw Exception(responseData['message'] ?? 'Error al procesar la solicitud');
-    }
-  } on TimeoutException catch (e) {
-    print('Error de timeout en forgotPassword: $e');
-    throw Exception('El servidor tardó demasiado en responder. Intenta nuevamente.');
-  } catch (e) {
-    print('Error en forgotPassword: $e');
-    throw Exception('Error al procesar la solicitud: ${e.toString()}');
-  }
-}
-
-
-Future<Map<String, dynamic>> verifyResetCode(String code) async {
-  try {
-    print('Verificando código: $code');
-
-    final response = await httpClient.post(
-      Uri.parse('$baseUrl/api/v1/auth/verify-reset-code'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'code': code}),
-    ).timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        throw TimeoutException('El servidor tardó demasiado en responder');
-      },
-    );
-
-    print('Respuesta verificación: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      return {
-        'success': true,
         'email': responseData['email'],
+        'token': responseData['token'], // Asegurarse de obtener el token
       };
-    } else if (response.statusCode == 400) {
-      final responseData = jsonDecode(response.body);
-      throw Exception(responseData['message'] ?? 'Código inválido o expirado');
     } else {
-      throw Exception('Error al verificar el código');
+      throw Exception(responseData['message'] ?? 'Token inválido o expirado');
     }
-  } on TimeoutException catch (e) {
-    print('Error de timeout en verifyResetCode: $e');
-    throw Exception('Timeout al verificar el código');
   } catch (e) {
-    print('Error en verifyResetCode: $e');
-    throw Exception(e.toString());
+    print('Error en verifyResetCode: $e'); // Para debug
+    throw Exception('Error al verificar el token: ${e.toString()}');
   }
 }
 
 // 🔐 RESTABLECER CONTRASEÑA
 Future<bool> resetPassword(String token, String newPassword) async {
   try {
-    print('Reseteando contraseña con token: $token');
+    print('Iniciando reseteo de contraseña...');
+    print('Token recibido: $token');
+
+    if (token.isEmpty || newPassword.isEmpty) {
+      throw Exception('El token y la nueva contraseña son obligatorios');
+    }
+
+    final Map<String, dynamic> requestBody = {
+      'token': token.trim(),
+      'newPassword': newPassword,
+    };
+
+    print('Cuerpo de la solicitud: $requestBody');
 
     final response = await httpClient.post(
       Uri.parse('$baseUrl/api/v1/auth/reset-password'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'token': token,
-        'newPassword': newPassword,
-      }),
-    ).timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        throw TimeoutException('El servidor tardó demasiado en responder');
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: jsonEncode(requestBody),
     );
 
-    print('Respuesta reset password: ${response.statusCode}');
-    print('Body: ${response.body}');
+    print('Código de estado: ${response.statusCode}');
+    print('Respuesta del servidor: ${response.body}');
 
-    if (response.statusCode == 200) {
+    // Aceptar tanto 200 como 201 como respuestas exitosas
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return true;
-    } else if (response.statusCode == 400) {
-      final errorData = jsonDecode(response.body);
-      throw Exception(errorData['message'] ?? 'Error al restablecer la contraseña');
     } else {
-      throw Exception('Error del servidor');
+      final errorData = jsonDecode(response.body);
+      if (response.statusCode == 400 && errorData['message']?.contains('token') ?? false) {
+        throw Exception('El token ha expirado o no es válido');
+      }
+      throw Exception(errorData['message'] ?? 'Error al restablecer la contraseña');
     }
-  } on TimeoutException catch (e) {
-    print('Error de timeout en resetPassword: $e');
-    throw Exception('Timeout al restablecer la contraseña');
   } catch (e) {
     print('Error en resetPassword: $e');
-    throw Exception(e.toString());
+    rethrow; // Propagar el error original
   }
 }
 

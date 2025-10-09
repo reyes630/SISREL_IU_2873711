@@ -35,6 +35,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
     );
   }
 
+  // Modificar el método _handleResetPassword
   Future<void> _handleResetPassword() async {
     final token = _tokenController.text.trim();
     final password = _passwordController.text;
@@ -59,33 +60,26 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/v1/auth/reset-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': widget.email,
-          'token': token,
-          'newPassword': password,
-        }),
+      final success = await resetPassword(token, password);
+      
+      if (!mounted) return;
+      
+      _showSnackBar('Contraseña actualizada correctamente');
+      
+      // Esperar un momento antes de redirigir
+      await Future.delayed(const Duration(seconds: 2));
+      
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginView()),
+        (route) => false,
       );
-
-      if (response.statusCode == 200) {
-        if (!mounted) return;
-        _showSnackBar('Contraseña actualizada correctamente');
-        
-        // Esperar 2 segundos antes de redirigir
-        await Future.delayed(const Duration(seconds: 2));
-        
-        if (!mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const LoginView()),
-          (route) => false,
-        );
-      } else {
-        throw Exception('Token inválido o expirado');
-      }
     } catch (e) {
-      _showSnackBar(e.toString(), isError: true);
+      if (!mounted) return;
+      _showSnackBar(
+        e.toString().replaceAll('Exception: ', ''),
+        isError: true
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -130,7 +124,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                           ),
                           const SizedBox(height: 20),
                           Text(
-                            "Se ha enviado un token a ${widget.email}",
+                            "Se ha enviado un token a ${widget.email}, revisa spam en caso de que no te llegue a la bandeja de entrada",
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               color: Colors.black54,
