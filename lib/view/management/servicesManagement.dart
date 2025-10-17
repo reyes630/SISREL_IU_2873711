@@ -350,7 +350,7 @@ class _ServicesManagementViewState extends State<ServicesManagementView> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.palette_outlined, size: 16, color: Colors.grey),
+                        const Icon(Icons.palette_outlined, size: 16, color: Colors.white),
                         const SizedBox(width: 8),
                         Text(
                           service['color'],
@@ -370,7 +370,7 @@ class _ServicesManagementViewState extends State<ServicesManagementView> {
       }),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF39A900),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white), 
         onPressed: () {
           _showServiceDialog();
         },

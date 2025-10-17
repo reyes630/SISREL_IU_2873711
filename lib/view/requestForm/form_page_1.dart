@@ -31,13 +31,13 @@ class _ViewsFormState extends State<ViewsForm> {
   String? selectedEventType;
   DateTime? selectedDate;
 
-  // Modifica las variables reactivas
+
   final Rx<DateTime?> _selectedDate = Rx<DateTime?>(null);
   final RxString _selectedMunicipio = RxString('');
   final RxString _selectedServiceType = RxString('');
   final RxString _selectedEventType = RxString('');
 
-  // Agregar variables para controlar el estado de los campos
+  // variables para controlar el estado de los campos
   Map<String, bool> fieldStates = {
     'document': false,
     'name': false,
@@ -45,10 +45,10 @@ class _ViewsFormState extends State<ViewsForm> {
     'telephone': false,
     'location': false,
     'needDescription': false,
-    'date': false,            // Agregar para fecha
-    'municipality': false,    // Agregar para municipio
-    'serviceType': false,     // Agregar para tipo servicio
-    'eventType': false,       // Agregar para tipo evento
+    'date': false,            
+    'municipality': false,    
+    'serviceType': false,    
+    'eventType': false,       
   };
 
   @override
@@ -69,7 +69,7 @@ class _ViewsFormState extends State<ViewsForm> {
     fetchMunicipalities();
     fetchServiceTypes();
     fetchEventTypes();
-    fetchServices(); // Agregar esta línea
+    fetchServices(); 
 
     // Agregar listeners a los controladores
     documentController.addListener(() {
@@ -108,7 +108,7 @@ class _ViewsFormState extends State<ViewsForm> {
       });
     });
 
-    // Modifica los observers para usar las variables Rx
+    // observers para usar las variables Rx
     ever(_selectedDate, (_) {
       setState(() {
         fieldStates['date'] = _selectedDate.value != null;

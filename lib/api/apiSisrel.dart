@@ -8,7 +8,8 @@ import 'package:intl/intl.dart';
 
 import '../view/request/viewRequests.dart';
 
-const baseUrl = "https://adso711-sisrel-94jo.onrender.com";
+//const baseUrl = "https://adso711-sisrel-94jo.onrender.com";
+const baseUrl = "https://sena-sisrel-prod-backend.rboojy.easypanel.host";
 const baseUrl2 = "https://api-colombia.com/api/v1/Department/8/cities";
 
 final httpClient = http.Client();
@@ -31,16 +32,23 @@ Future fetchUsers() async {
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
+      // Validar que data existe y es una lista
       final categoryData = jsonResponse['data'];
-      controller.setListUsers(categoryData);
+      if (categoryData != null) {
+        controller.setListUsers(categoryData);
+      } else {
+        debugPrint('Warning: data is null in fetchUsers response');
+        controller.setListUsers([]); // Set empty list as fallback
+      }
     } else if (response.statusCode == 401) {
       controller.logout();
-      throw Exception('Sesión expirada. Por favor inicie sesión nuevamente.');
+      debugPrint('Unauthorized access in fetchUsers');
     } else {
-      throw Exception('Error al traer los datos de usuarios');
+      debugPrint('Error fetching users: ${response.statusCode}');
     }
   } catch (e) {
-    throw Exception('Error: ${e.toString()}');
+    debugPrint('Exception in fetchUsers: ${e.toString()}');
+    // No relanzar el error, solo registrarlo
   }
 }
 
@@ -1120,15 +1128,32 @@ Future<void> createUser(Map<String, dynamic> userData) async {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(userData),
+    ).timeout(
+      apiTimeout,
+      onTimeout: () => throw TimeoutException('El servidor tardó demasiado en responder'),
     );
 
-    if (response.statusCode == 201) {
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      await Future.delayed(const Duration(milliseconds: 500));
       await fetchUsers();
-    } else {
-      throw Exception('Error al crear el usuario');
+      return;
     }
+
+    // Si la respuesta no es exitosa, intentar obtener el mensaje de error
+    final errorData = jsonDecode(response.body);
+    throw Exception(errorData['message'] ?? 'Error desconocido al crear el usuario');
+    
   } catch (e) {
-    throw Exception('Error: ${e.toString()}');
+    debugPrint('Error detallado en createUser: $e');
+    if (e is TimeoutException) {
+      throw Exception('El servidor tardó demasiado en responder');
+    } else if (e.toString().contains('duplicate')) {
+      throw Exception('El documento o email ya existe en el sistema');
+    } else {
+      throw Exception('No se pudo crear el usuario: ${e.toString()}');
+    }
   }
 }
 

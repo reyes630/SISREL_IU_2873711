@@ -45,17 +45,60 @@ class _ViewRequestsState extends State<ViewRequests> {
     return Color(int.parse(hexColor, radix: 16));
   }
 
-  Color getStatusColor(String createdDate) {
+  Color getStatusColor(String createdDate, int state) {
     final created = DateTime.parse(createdDate);
     final now = DateTime.now();
     final difference = now.difference(created).inDays;
 
+    // Para solicitudes de 7 días o menos
     if (difference <= 7) {
-      return Colors.green;
-    } else if (difference <= 14) {
-      return Colors.yellow;
-    } else {
-      return Colors.red;
+      switch (state) {
+        case 1: // Pendiente
+          return Colors.green.withOpacity(0.9); // Verde tenue
+        case 3: // Validada
+        case 4: // En proceso
+          return Colors.green; // Verde normal
+        case 5: // Ejecutada
+        case 6: // Resuelta
+        case 7: // Cerrada
+          return Colors.green.shade700; // Verde intenso
+        default:
+          return Colors.green;
+      }
+    }
+    // Para solicitudes entre 8 y 15 días
+    else if (difference <= 15) {
+      switch (state) {
+        case 1: // Pendiente
+          return Colors.orange.shade900; // Naranja oscuro
+        case 3: // Validada
+        case 4: // En proceso
+          return Colors.yellow.shade600; // Amarillo intermedio
+        case 5: // Ejecutada
+          return Colors.yellow.shade300; // Amarillo claro
+        case 6: // Resuelta
+        case 7: // Cerrada
+          return Colors.green; // Verde
+        default:
+          return Colors.yellow;
+      }
+    }
+    // Para solicitudes de más de 15 días
+    else {
+      switch (state) {
+        case 1: // Pendiente
+          return Colors.red.shade900; // Rojo muy oscuro
+        case 3: // Validada
+        case 4: // En proceso
+          return Colors.orange.shade900; // Naranja fuerte
+        case 5: // Ejecutada
+          return Colors.yellow.shade900; // Amarillo más oscuro
+        case 6: // Resuelta
+        case 7: // Cerrada
+          return Colors.green; // Verde
+        default:
+          return Colors.red; // Rojo por defecto
+      }
     }
   }
 
@@ -370,7 +413,10 @@ class _ViewRequestsState extends State<ViewRequests> {
                                     height: 30,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: getStatusColor(createdAt),
+                                      color: getStatusColor(
+                                        request['createdAt'],
+                                        request['FKstates'], // Pasar el estado actual
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -804,7 +850,7 @@ class _ViewRequestsState extends State<ViewRequests> {
                     height: 30,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: getStatusColor(request['createdAt']),
+                      color: getStatusColor(request['createdAt'], request['FKstates']),
                     ),
                   ),
                 ),

@@ -408,7 +408,7 @@ class _StatesManagementViewState extends State<StatesManagementView> {
       }),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF39A900),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white), 
         onPressed: () => _showStateDialog(),
       ),
     );
